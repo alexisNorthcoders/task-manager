@@ -1,4 +1,4 @@
-package com.projects.task_manager.controller;
+package com.projects.taskmanager.controller;
 
 import java.util.List;
 
@@ -8,8 +8,8 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
-import com.projects.task_manager.model.Task;
-import com.projects.task_manager.service.TaskService;
+import com.projects.taskmanager.model.Task;
+import com.projects.taskmanager.service.TaskService;
 
 @Controller
 public class TaskController {

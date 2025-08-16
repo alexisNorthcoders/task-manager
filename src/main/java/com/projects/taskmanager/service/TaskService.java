@@ -1,12 +1,12 @@
-package com.projects.task_manager.service;
+package com.projects.taskmanager.service;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.projects.task_manager.model.Task;
-import com.projects.task_manager.repository.TaskRepository;
+import com.projects.taskmanager.model.Task;
+import com.projects.taskmanager.repository.TaskRepository;
 
 /**
  * Service for managing tasks.
