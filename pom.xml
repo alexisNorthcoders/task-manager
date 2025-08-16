@@ -8,10 +8,10 @@
 		<version>3.5.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.example</groupId>
-	<artifactId>task-manager</artifactId>
+	<groupId>com.projects</groupId>
+	<artifactId>taskmanager</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>task-manager</name>
+	<name>taskmanager</name>
 	<description>First project in Java</description>
 	<url/>
 	<licenses>
