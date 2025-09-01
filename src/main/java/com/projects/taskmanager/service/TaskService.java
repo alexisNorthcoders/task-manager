@@ -1,5 +1,6 @@
 package com.projects.taskmanager.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -89,7 +90,7 @@ public class TaskService {
      * @param completed new completion status (optional - only updates if not null)
      * @return the updated task
      */
-    public Task updateTask(Long id, String title, String description, Boolean completed) {
+    public Task updateTask(Long id, String title, String description, Boolean completed, String dueDate, Integer estimationHours) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id " + id));
         
@@ -105,6 +106,16 @@ public class TaskService {
         }
         if (completed != null) {
             task.setCompleted(completed);
+        }
+        if (dueDate != null) {
+            task.setDueDate(parseDueDate(dueDate));
+        }
+        if (dueDate != null) {
+            task.setDueDate(parseDueDate(dueDate));
+        }
+        if (estimationHours != null) {
+            enforceEstimationHours(estimationHours);
+            task.setEstimationHours(estimationHours);
         }
         
         return taskRepository.save(task);
@@ -127,6 +138,26 @@ public class TaskService {
         int max = taskProperties.getDescriptionMaxLength();
         if (description.length() > max) {
             throw new IllegalArgumentException("Description length exceeds max of " + max);
+        }
+    }
+
+    private LocalDate parseDueDate(String value) {
+        try {
+            return LocalDate.parse(value);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid dueDate format, expected YYYY-MM-DD");
+        }
+    }
+
+    private void enforceEstimationHours(Integer estimationHours) {
+        if (estimationHours == null) {
+            return;
+        }
+        if (estimationHours < 0) {
+            throw new IllegalArgumentException("Estimation hours must be >= 0");
+        }
+        if (estimationHours > 10000) {
+            throw new IllegalArgumentException("Estimation hours is unreasonably large");
         }
     }
     

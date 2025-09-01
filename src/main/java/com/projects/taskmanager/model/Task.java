@@ -1,13 +1,22 @@
 package com.projects.taskmanager.model;
 
+import java.time.Instant;
+import java.time.LocalDate;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Column;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import jakarta.persistence.EntityListeners;
 
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 public class Task {
 
     @Id
@@ -20,6 +29,17 @@ public class Task {
     
     @Enumerated(EnumType.STRING)
     private TaskStatus status = TaskStatus.TODO;
+
+    @CreatedDate
+    @Column(updatable = false)
+    private Instant createdAt;
+
+    @LastModifiedDate
+    private Instant updatedAt;
+
+    private LocalDate dueDate;
+
+    private Integer estimationHours; // optional estimate in hours
 
     // Constructors
     public Task() {
@@ -79,6 +99,30 @@ public class Task {
         this.status = status;
         // keep completed in sync
         this.completed = (status == TaskStatus.DONE);
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    public Integer getEstimationHours() {
+        return estimationHours;
+    }
+
+    public void setEstimationHours(Integer estimationHours) {
+        this.estimationHours = estimationHours;
     }
 
     @Override

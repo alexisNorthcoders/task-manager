@@ -10,6 +10,10 @@ type Task{
     description: String
     completed: Boolean!
     status: TaskStatus!
+    createdAt: String
+    updatedAt: String
+    dueDate: String
+    estimationHours: Int
 }
 
 type Query {
@@ -19,7 +23,7 @@ type Query {
 }
 
 type Mutation {
-    createTask(title: String!, description: String, completed: Boolean = false): Task!
-    updateTask(id: ID!, title: String, description: String, completed: Boolean): Task!
+    createTask(title: String!, description: String, completed: Boolean = false, dueDate: String, estimationHours: Int): Task!
+    updateTask(id: ID!, title: String, description: String, completed: Boolean, dueDate: String, estimationHours: Int): Task!
     deleteTask(id: ID!): Boolean!
 }

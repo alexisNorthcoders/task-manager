@@ -1,5 +1,6 @@
 package com.projects.taskmanager.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -35,11 +36,17 @@ public class TaskController {
     }
 
     @MutationMapping
-    public Task createTask(@Argument String title, @Argument String description, @Argument Boolean completed){
+    public Task createTask(@Argument String title, @Argument String description, @Argument Boolean completed, @Argument String dueDate, @Argument Integer estimationHours){
         Task task = new Task();
         task.setTitle(title);
         task.setDescription(description);
         task.setCompleted(completed != null && completed);
+        if (dueDate != null) {
+            task.setDueDate(LocalDate.parse(dueDate));
+        }
+        if (estimationHours != null) {
+            task.setEstimationHours(estimationHours);
+        }
         return taskService.createTask(task);
     }
 
@@ -49,7 +56,7 @@ public class TaskController {
     }
 
     @MutationMapping
-    public Task updateTask(@Argument Long id, @Argument String title, @Argument String description, @Argument Boolean completed) {
-        return taskService.updateTask(id, title, description, completed);
+    public Task updateTask(@Argument Long id, @Argument String title, @Argument String description, @Argument Boolean completed, @Argument String dueDate, @Argument Integer estimationHours) {
+        return taskService.updateTask(id, title, description, completed, dueDate, estimationHours);
     }
 }
