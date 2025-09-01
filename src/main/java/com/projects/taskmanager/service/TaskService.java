@@ -11,6 +11,7 @@ import com.projects.taskmanager.model.Task;
 import com.projects.taskmanager.model.TaskStatus;
 import com.projects.taskmanager.repository.TaskRepository;
 import com.projects.taskmanager.util.TextNormalizer;
+import com.projects.taskmanager.service.exception.TaskNotFoundException;
 
 /**
  * Service for managing tasks.
@@ -92,7 +93,7 @@ public class TaskService {
      */
     public Task updateTask(Long id, String title, String description, Boolean completed, String dueDate, Integer estimationHours) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with id " + id));
+                .orElseThrow(() -> new TaskNotFoundException(id));
         
         // Only update fields that are provided (not null)
         if (title != null) {

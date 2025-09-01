@@ -1,10 +1,17 @@
 package com.projects.taskmanager.graphql.input;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
+
 public class UpdateTaskInput {
+    @Size(max = 255)
     private String title;
     private String description;
     private Boolean completed;
     private String dueDate;
+    @Min(0)
+    @Max(10000)
     private Integer estimationHours;
 
     public UpdateTaskInput() {

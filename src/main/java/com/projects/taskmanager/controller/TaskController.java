@@ -7,14 +7,17 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 
 import com.projects.taskmanager.model.Task;
 import com.projects.taskmanager.model.TaskStatus;
 import com.projects.taskmanager.service.TaskService;
 import com.projects.taskmanager.graphql.input.CreateTaskInput;
 import com.projects.taskmanager.graphql.input.UpdateTaskInput;
+import jakarta.validation.Valid;
 
 @Controller
+@Validated
 public class TaskController {
     private final TaskService taskService;
 
@@ -38,7 +41,7 @@ public class TaskController {
     }
 
     @MutationMapping
-    public Task createTask(@Argument("input") CreateTaskInput input){
+    public Task createTask(@Argument("input") @Valid CreateTaskInput input){
         Task task = new Task();
         task.setTitle(input.getTitle());
         task.setDescription(input.getDescription());
@@ -58,7 +61,7 @@ public class TaskController {
     }
 
     @MutationMapping
-    public Task updateTask(@Argument Long id, @Argument("input") UpdateTaskInput input) {
+    public Task updateTask(@Argument Long id, @Argument("input") @Valid UpdateTaskInput input) {
         return taskService.updateTask(
             id,
             input.getTitle(),
