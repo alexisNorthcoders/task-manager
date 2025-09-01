@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.projects.taskmanager.model.Task;
+import com.projects.taskmanager.model.TaskStatus;
 import com.projects.taskmanager.repository.TaskRepository;
 
 /**
@@ -29,6 +30,15 @@ public class TaskService {
      */
     public List<Task> getAllTasks() {
         return taskRepository.findAll();
+    }
+
+    /**
+     * Get all tasks by status.
+     * @param status
+     * @return
+     */
+    public List<Task> getAllTasksByStatus(TaskStatus status) {
+        return taskRepository.findByStatus(status);
     }
 
     /**

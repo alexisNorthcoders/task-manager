@@ -19,7 +19,7 @@ public class Task {
     private boolean completed;
     
     @Enumerated(EnumType.STRING)
-    private TaskStatus status;
+    private TaskStatus status = TaskStatus.TODO;
 
     // Constructors
     public Task() {
@@ -64,9 +64,9 @@ public class Task {
     public void setCompleted(boolean completed) {
         this.completed = completed;
         // keep status in sync
-        if (completed && (status == null || status != TaskStatus.DONE)) {
+        if (completed) {
             status = TaskStatus.DONE;
-        } else if (!completed && status == TaskStatus.DONE) {
+        } else if (status == null || status == TaskStatus.DONE) {
             status = TaskStatus.TODO;
         }
     }

@@ -1,17 +1,25 @@
+enum TaskStatus {
+    TODO
+    IN_PROGRESS
+    DONE
+}
+
 type Task{
     id: ID!
     title: String!
     description: String
     completed: Boolean!
+    status: TaskStatus!
 }
 
 type Query {
     tasks: [Task!]!
     task(id: ID!): Task
+    tasksByStatus(status: TaskStatus!): [Task!]!
 }
 
 type Mutation {
-    createTask(title: String!, description: String, completed: Boolean!): Task!
+    createTask(title: String!, description: String, completed: Boolean = false): Task!
     updateTask(id: ID!, title: String, description: String, completed: Boolean): Task!
     deleteTask(id: ID!): Boolean!
 }

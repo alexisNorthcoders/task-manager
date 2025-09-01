@@ -8,6 +8,7 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
 import com.projects.taskmanager.model.Task;
+import com.projects.taskmanager.model.TaskStatus;
 import com.projects.taskmanager.service.TaskService;
 
 @Controller
@@ -21,6 +22,11 @@ public class TaskController {
     @QueryMapping
     public List<Task> tasks() {
         return taskService.getAllTasks();
+    }
+
+    @QueryMapping
+    public List<Task> tasksByStatus(@Argument TaskStatus status) {
+        return taskService.getAllTasksByStatus(status);
     }
 
     @QueryMapping
