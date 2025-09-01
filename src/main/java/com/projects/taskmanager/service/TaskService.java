@@ -5,9 +5,11 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.projects.taskmanager.config.TaskProperties;
 import com.projects.taskmanager.model.Task;
 import com.projects.taskmanager.model.TaskStatus;
 import com.projects.taskmanager.repository.TaskRepository;
+import com.projects.taskmanager.util.TextNormalizer;
 
 /**
  * Service for managing tasks.
@@ -15,13 +17,17 @@ import com.projects.taskmanager.repository.TaskRepository;
 @Service
 public class TaskService {
     private final TaskRepository taskRepository;
+    private final TaskProperties taskProperties;
+    private final TextNormalizer textNormalizer;
 
     /**
      * Constructor for TaskService.
      * @param taskRepository the repository to use for task operations
      */
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository, TaskProperties taskProperties, TextNormalizer textNormalizer) {
         this.taskRepository = taskRepository;
+        this.taskProperties = taskProperties;
+        this.textNormalizer = textNormalizer;
     }
 
     /**
@@ -56,6 +62,9 @@ public class TaskService {
      * @return
      */
     public Task createTask(Task task) {
+        task.setTitle(textNormalizer.normalizeTitle(task.getTitle()));
+        enforceTitleLength(task.getTitle());
+        enforceDescriptionLength(task.getDescription());
         return taskRepository.save(task);
     }
 
@@ -86,9 +95,12 @@ public class TaskService {
         
         // Only update fields that are provided (not null)
         if (title != null) {
-            task.setTitle(title);
+            String normalized = textNormalizer.normalizeTitle(title);
+            enforceTitleLength(normalized);
+            task.setTitle(normalized);
         }
         if (description != null) {
+            enforceDescriptionLength(description);
             task.setDescription(description);
         }
         if (completed != null) {
@@ -96,6 +108,26 @@ public class TaskService {
         }
         
         return taskRepository.save(task);
+    }
+
+    private void enforceTitleLength(String title) {
+        if (title == null) {
+            return;
+        }
+        int max = taskProperties.getTitleMaxLength();
+        if (title.length() > max) {
+            throw new IllegalArgumentException("Title length exceeds max of " + max);
+        }
+    }
+
+    private void enforceDescriptionLength(String description) {
+        if (description == null) {
+            return;
+        }
+        int max = taskProperties.getDescriptionMaxLength();
+        if (description.length() > max) {
+            throw new IllegalArgumentException("Description length exceeds max of " + max);
+        }
     }
     
 }

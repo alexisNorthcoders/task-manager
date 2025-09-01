@@ -11,6 +11,11 @@ Learn Java, Spring Boot, and GraphQL by iteratively evolving the existing task-m
 - **Goal**: Understand DI, configuration, profiles.
 - **Do**: Add `application-local.properties` and `application-prod.properties`; inject config into `TaskService` (e.g., max title length).
 
+Profile usage:
+- Local dev: set `SPRING_PROFILES_ACTIVE=local` (already in `run-dev.sh`).
+- Prod: set `SPRING_PROFILES_ACTIVE=prod` and provide datasource env vars.
+- Tunables: `task.title.max-length` controls title length validation.
+
 ### 3) JPA & H2 persistence (1 day)
 - **Goal**: CRUD with Spring Data JPA.
 - **Do**: Add fields to `Task` (e.g., `createdAt`, `updatedAt`, `dueDate`); use JPA auditing for timestamps; write a repository method `findByCompleted(boolean)` and expose it via GraphQL.
