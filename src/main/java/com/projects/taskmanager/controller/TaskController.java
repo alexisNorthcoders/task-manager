@@ -2,7 +2,6 @@ package com.projects.taskmanager.controller;
 
 import java.util.List;
 
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -30,30 +29,21 @@ public class TaskController {
     }
 
     @MutationMapping
-    public Task createTask(@Argument String title, @Argument String description){
+    public Task createTask(@Argument String title, @Argument String description, @Argument Boolean completed){
         Task task = new Task();
         task.setTitle(title);
         task.setDescription(description);
-        task.setCompleted(false);
+        task.setCompleted(completed != null && completed);
         return taskService.createTask(task);
     }
 
     @MutationMapping
     public Boolean deleteTask(@Argument Long id) {
-        try {
-            taskService.deleteTask(id);
-            return true;
-        } catch (EmptyResultDataAccessException e) {
-            return false;
-        }
+        return taskService.deleteTask(id);
     }
 
     @MutationMapping
-    public Task updateTask(@Argument Long id, @Argument String title, @Argument String description, @Argument boolean completed) {
-        Task updatedTask = new Task();
-        updatedTask.setTitle(title);
-        updatedTask.setDescription(description);
-        updatedTask.setCompleted(completed);
-        return taskService.updateTask(id, updatedTask);
+    public Task updateTask(@Argument Long id, @Argument String title, @Argument String description, @Argument Boolean completed) {
+        return taskService.updateTask(id, title, description, completed);
     }
 }

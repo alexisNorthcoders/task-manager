@@ -52,23 +52,39 @@ public class TaskService {
     /**
      * Delete a task by its ID.
      * @param id
+     * @return true if the task was found and deleted, false if the task didn't exist
      */
-    public void deleteTask(Long id) {
-        taskRepository.deleteById(id);
+    public boolean deleteTask(Long id) {
+        if (taskRepository.existsById(id)) {
+            taskRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 
     /**
-     * Update an existing task.
-     * @param id
-     * @param taskDetails
-     * @return
+     * Update an existing task with partial updates.
+     * @param id the ID of the task to update
+     * @param title new title (optional - only updates if not null)
+     * @param description new description (optional - only updates if not null)
+     * @param completed new completion status (optional - only updates if not null)
+     * @return the updated task
      */
-    public Task updateTask(Long id, Task taskDetails) {
+    public Task updateTask(Long id, String title, String description, Boolean completed) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id " + id));
-        task.setTitle(taskDetails.getTitle());
-        task.setDescription(taskDetails.getDescription());
-        task.setCompleted(taskDetails.isCompleted());
+        
+        // Only update fields that are provided (not null)
+        if (title != null) {
+            task.setTitle(title);
+        }
+        if (description != null) {
+            task.setDescription(description);
+        }
+        if (completed != null) {
+            task.setCompleted(completed);
+        }
+        
         return taskRepository.save(task);
     }
     
