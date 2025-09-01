@@ -11,6 +11,8 @@ import org.springframework.stereotype.Controller;
 import com.projects.taskmanager.model.Task;
 import com.projects.taskmanager.model.TaskStatus;
 import com.projects.taskmanager.service.TaskService;
+import com.projects.taskmanager.graphql.input.CreateTaskInput;
+import com.projects.taskmanager.graphql.input.UpdateTaskInput;
 
 @Controller
 public class TaskController {
@@ -36,16 +38,16 @@ public class TaskController {
     }
 
     @MutationMapping
-    public Task createTask(@Argument String title, @Argument String description, @Argument Boolean completed, @Argument String dueDate, @Argument Integer estimationHours){
+    public Task createTask(@Argument("input") CreateTaskInput input){
         Task task = new Task();
-        task.setTitle(title);
-        task.setDescription(description);
-        task.setCompleted(completed != null && completed);
-        if (dueDate != null) {
-            task.setDueDate(LocalDate.parse(dueDate));
+        task.setTitle(input.getTitle());
+        task.setDescription(input.getDescription());
+        task.setCompleted(input.getCompleted() != null && input.getCompleted());
+        if (input.getDueDate() != null) {
+            task.setDueDate(LocalDate.parse(input.getDueDate()));
         }
-        if (estimationHours != null) {
-            task.setEstimationHours(estimationHours);
+        if (input.getEstimationHours() != null) {
+            task.setEstimationHours(input.getEstimationHours());
         }
         return taskService.createTask(task);
     }
@@ -56,7 +58,14 @@ public class TaskController {
     }
 
     @MutationMapping
-    public Task updateTask(@Argument Long id, @Argument String title, @Argument String description, @Argument Boolean completed, @Argument String dueDate, @Argument Integer estimationHours) {
-        return taskService.updateTask(id, title, description, completed, dueDate, estimationHours);
+    public Task updateTask(@Argument Long id, @Argument("input") UpdateTaskInput input) {
+        return taskService.updateTask(
+            id,
+            input.getTitle(),
+            input.getDescription(),
+            input.getCompleted(),
+            input.getDueDate(),
+            input.getEstimationHours()
+        );
     }
 }

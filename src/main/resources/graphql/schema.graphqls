@@ -22,8 +22,24 @@ type Query {
     tasksByStatus(status: TaskStatus!): [Task!]!
 }
 
+input CreateTaskInput {
+    title: String!
+    description: String
+    completed: Boolean
+    dueDate: String
+    estimationHours: Int
+}
+
+input UpdateTaskInput {
+    title: String
+    description: String
+    completed: Boolean
+    dueDate: String
+    estimationHours: Int
+}
+
 type Mutation {
-    createTask(title: String!, description: String, completed: Boolean = false, dueDate: String, estimationHours: Int): Task!
-    updateTask(id: ID!, title: String, description: String, completed: Boolean, dueDate: String, estimationHours: Int): Task!
+    createTask(input: CreateTaskInput!): Task!
+    updateTask(id: ID!, input: UpdateTaskInput!): Task!
     deleteTask(id: ID!): Boolean!
 }
