@@ -16,6 +16,7 @@ import com.projects.taskmanager.model.TaskStatus;
 import com.projects.taskmanager.repository.TaskRepository;
 import com.projects.taskmanager.util.TextNormalizer;
 import com.projects.taskmanager.service.exception.TaskNotFoundException;
+import com.projects.taskmanager.service.exception.UserNotFoundException;
 
 /**
  * Service for managing tasks.
@@ -270,5 +271,7 @@ public class TaskService {
             default -> Sort.by("id").ascending(); // Default sort
         };
     }
+
+
 
 }

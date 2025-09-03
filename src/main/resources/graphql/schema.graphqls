@@ -4,6 +4,18 @@ enum TaskStatus {
     DONE
 }
 
+type User {
+    id: ID!
+    username: String!
+    email: String!
+    firstName: String!
+    lastName: String!
+    fullName: String!
+    createdAt: String
+    updatedAt: String
+    assignedTasks: [Task!]!
+}
+
 type Task{
     id: ID!
     title: String!
@@ -14,6 +26,7 @@ type Task{
     updatedAt: String
     dueDate: String
     estimationHours: Int
+    assignedUsers: [User!]!
 }
 
 type TaskPage {
@@ -52,6 +65,23 @@ type Query {
     ): TaskPage!
     task(id: ID!): Task
     tasksByStatus(status: TaskStatus!): [Task!]!
+    users: [User!]!
+    user(id: ID!): User
+    usersByTask(taskId: ID!): [User!]!
+}
+
+input CreateUserInput {
+    username: String!
+    email: String!
+    firstName: String!
+    lastName: String!
+}
+
+input UpdateUserInput {
+    username: String
+    email: String
+    firstName: String
+    lastName: String
 }
 
 input CreateTaskInput {
@@ -60,6 +90,7 @@ input CreateTaskInput {
     completed: Boolean
     dueDate: String
     estimationHours: Int
+    assignedUserIds: [ID!]
 }
 
 input UpdateTaskInput {
@@ -68,10 +99,16 @@ input UpdateTaskInput {
     completed: Boolean
     dueDate: String
     estimationHours: Int
+    assignedUserIds: [ID!]
 }
 
 type Mutation {
     createTask(input: CreateTaskInput!): Task!
     updateTask(id: ID!, input: UpdateTaskInput!): Task!
     deleteTask(id: ID!): Boolean!
+    createUser(input: CreateUserInput!): User!
+    updateUser(id: ID!, input: UpdateUserInput!): User!
+    deleteUser(id: ID!): Boolean!
+    assignUsersToTask(taskId: ID!, userIds: [ID!]!): Task!
+    unassignUsersFromTask(taskId: ID!, userIds: [ID!]!): Task!
 }

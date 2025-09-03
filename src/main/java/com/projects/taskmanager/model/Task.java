@@ -2,6 +2,8 @@ package com.projects.taskmanager.model;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,6 +12,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Column;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.JoinColumn;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -40,6 +45,14 @@ public class Task {
     private LocalDate dueDate;
 
     private Integer estimationHours; // optional estimate in hours
+
+    @ManyToMany
+    @JoinTable(
+        name = "task_users",
+        joinColumns = @JoinColumn(name = "task_id"),
+        inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id")
+    )
+    private Set<User> assignedUsers = new HashSet<>();
 
     // Constructors
     public Task() {
@@ -123,6 +136,25 @@ public class Task {
 
     public void setEstimationHours(Integer estimationHours) {
         this.estimationHours = estimationHours;
+    }
+
+    public Set<User> getAssignedUsers() {
+        return assignedUsers;
+    }
+
+    public void setAssignedUsers(Set<User> assignedUsers) {
+        this.assignedUsers = assignedUsers;
+    }
+
+    // Helper methods for managing user assignments
+    public void assignUser(User user) {
+        this.assignedUsers.add(user);
+        user.getAssignedTasks().add(this);
+    }
+
+    public void unassignUser(User user) {
+        this.assignedUsers.remove(user);
+        user.getAssignedTasks().remove(this);
     }
 
     @Override

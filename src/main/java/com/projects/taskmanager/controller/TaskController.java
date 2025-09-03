@@ -2,6 +2,7 @@ package com.projects.taskmanager.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -14,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import com.projects.taskmanager.model.Task;
 import com.projects.taskmanager.model.TaskStatus;
 import com.projects.taskmanager.service.TaskService;
+import com.projects.taskmanager.service.UserService;
 import com.projects.taskmanager.graphql.input.CreateTaskInput;
 import com.projects.taskmanager.graphql.input.UpdateTaskInput;
 import jakarta.validation.Valid;
@@ -22,9 +24,11 @@ import jakarta.validation.Valid;
 @Validated
 public class TaskController {
     private final TaskService taskService;
+    private final UserService userService;
 
-    public TaskController(TaskService taskService) {
+    public TaskController(TaskService taskService, UserService userService) {
         this.taskService = taskService;
+        this.userService = userService;
     }
 
     @QueryMapping
@@ -96,7 +100,14 @@ public class TaskController {
         if (input.getEstimationHours() != null) {
             task.setEstimationHours(input.getEstimationHours());
         }
-        return taskService.createTask(task);
+        Task createdTask = taskService.createTask(task);
+
+        // Handle user assignments if provided
+        if (input.getAssignedUserIds() != null && !input.getAssignedUserIds().isEmpty()) {
+            return userService.assignUsersToTask(createdTask.getId(), Set.copyOf(input.getAssignedUserIds()));
+        }
+
+        return createdTask;
     }
 
     @MutationMapping
@@ -106,7 +117,7 @@ public class TaskController {
 
     @MutationMapping
     public Task updateTask(@Argument Long id, @Argument("input") @Valid UpdateTaskInput input) {
-        return taskService.updateTask(
+        Task updatedTask = taskService.updateTask(
             id,
             input.getTitle(),
             input.getDescription(),
@@ -114,5 +125,12 @@ public class TaskController {
             input.getDueDate(),
             input.getEstimationHours()
         );
+
+        // Handle user assignments if provided
+        if (input.getAssignedUserIds() != null) {
+            return userService.assignUsersToTask(updatedTask.getId(), Set.copyOf(input.getAssignedUserIds()));
+        }
+
+        return updatedTask;
     }
 }

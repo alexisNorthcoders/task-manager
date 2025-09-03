@@ -3,6 +3,7 @@ package com.projects.taskmanager.graphql.input;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 public class UpdateTaskInput {
     @Size(max = 255)
@@ -13,6 +14,8 @@ public class UpdateTaskInput {
     @Min(0)
     @Max(10000)
     private Integer estimationHours;
+
+    private List<Long> assignedUserIds;
 
     public UpdateTaskInput() {
     }
@@ -55,6 +58,14 @@ public class UpdateTaskInput {
 
     public void setEstimationHours(Integer estimationHours) {
         this.estimationHours = estimationHours;
+    }
+
+    public List<Long> getAssignedUserIds() {
+        return assignedUserIds;
+    }
+
+    public void setAssignedUserIds(List<Long> assignedUserIds) {
+        this.assignedUserIds = assignedUserIds;
     }
 }
 

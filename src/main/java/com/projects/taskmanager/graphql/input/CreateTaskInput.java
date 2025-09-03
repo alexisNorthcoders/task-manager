@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 public class CreateTaskInput {
     @NotBlank
@@ -15,6 +16,8 @@ public class CreateTaskInput {
     @Min(0)
     @Max(10000)
     private Integer estimationHours;
+
+    private List<Long> assignedUserIds;
 
     public CreateTaskInput() {
     }
@@ -57,6 +60,14 @@ public class CreateTaskInput {
 
     public void setEstimationHours(Integer estimationHours) {
         this.estimationHours = estimationHours;
+    }
+
+    public List<Long> getAssignedUserIds() {
+        return assignedUserIds;
+    }
+
+    public void setAssignedUserIds(List<Long> assignedUserIds) {
+        this.assignedUserIds = assignedUserIds;
     }
 }
 
