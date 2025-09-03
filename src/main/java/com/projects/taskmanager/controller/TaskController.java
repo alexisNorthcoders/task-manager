@@ -19,16 +19,20 @@ import com.projects.taskmanager.service.UserService;
 import com.projects.taskmanager.graphql.input.CreateTaskInput;
 import com.projects.taskmanager.graphql.input.UpdateTaskInput;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
+import com.projects.taskmanager.graphql.GraphQLUserContext;
 
 @Controller
 @Validated
 public class TaskController {
     private final TaskService taskService;
     private final UserService userService;
+    private final GraphQLUserContext userContext;
 
-    public TaskController(TaskService taskService, UserService userService) {
+    public TaskController(TaskService taskService, UserService userService, GraphQLUserContext userContext) {
         this.taskService = taskService;
         this.userService = userService;
+        this.userContext = userContext;
     }
 
     @QueryMapping
@@ -89,6 +93,7 @@ public class TaskController {
     }
 
     @MutationMapping
+    @PreAuthorize("hasRole('USER')")
     public Task createTask(@Argument("input") @Valid CreateTaskInput input){
         Task task = new Task();
         task.setTitle(input.getTitle());
@@ -111,11 +116,13 @@ public class TaskController {
     }
 
     @MutationMapping
+    @PreAuthorize("hasRole('USER')")
     public Boolean deleteTask(@Argument Long id) {
         return taskService.deleteTask(id);
     }
 
     @MutationMapping
+    @PreAuthorize("hasRole('USER')")
     public Task updateTask(@Argument Long id, @Argument("input") @Valid UpdateTaskInput input) {
         Task updatedTask = taskService.updateTask(
             id,
