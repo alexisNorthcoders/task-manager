@@ -21,6 +21,8 @@ import com.projects.taskmanager.graphql.input.UpdateTaskInput;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.projects.taskmanager.graphql.GraphQLUserContext;
+import com.projects.taskmanager.observability.MetricsService;
+import io.micrometer.core.instrument.Timer;
 
 @Controller
 @Validated
@@ -28,16 +30,25 @@ public class TaskController {
     private final TaskService taskService;
     private final UserService userService;
     private final GraphQLUserContext userContext;
+    private final MetricsService metricsService;
 
-    public TaskController(TaskService taskService, UserService userService, GraphQLUserContext userContext) {
+    public TaskController(TaskService taskService, UserService userService, GraphQLUserContext userContext, MetricsService metricsService) {
         this.taskService = taskService;
         this.userService = userService;
         this.userContext = userContext;
+        this.metricsService = metricsService;
     }
 
     @QueryMapping
     public List<Task> tasks() {
-        return taskService.getAllTasks();
+        Timer.Sample sample = metricsService.startGraphQLQueryTimer();
+        try {
+            List<Task> result = taskService.getAllTasks();
+            metricsService.recordActiveTasks(result.size());
+            return result;
+        } finally {
+            metricsService.stopGraphQLQueryTimer(sample);
+        }
     }
 
     @QueryMapping
@@ -95,49 +106,74 @@ public class TaskController {
     @MutationMapping
     @PreAuthorize("hasRole('USER')")
     public Task createTask(@Argument("input") @Valid CreateTaskInput input){
-        Task task = new Task();
-        task.setTitle(input.getTitle());
-        task.setDescription(input.getDescription());
-        task.setCompleted(input.getCompleted() != null && input.getCompleted());
-        if (input.getDueDate() != null) {
-            task.setDueDate(LocalDate.parse(input.getDueDate()));
-        }
-        if (input.getEstimationHours() != null) {
-            task.setEstimationHours(input.getEstimationHours());
-        }
-        Task createdTask = taskService.createTask(task);
+        Timer.Sample sample = metricsService.startGraphQLMutationTimer();
+        try {
+            Task task = new Task();
+            task.setTitle(input.getTitle());
+            task.setDescription(input.getDescription());
+            task.setCompleted(input.getCompleted() != null && input.getCompleted());
+            if (input.getDueDate() != null) {
+                task.setDueDate(LocalDate.parse(input.getDueDate()));
+            }
+            if (input.getEstimationHours() != null) {
+                task.setEstimationHours(input.getEstimationHours());
+            }
+            Task createdTask = taskService.createTask(task);
 
-        // Handle user assignments if provided
-        if (input.getAssignedUserIds() != null && !input.getAssignedUserIds().isEmpty()) {
-            return userService.assignUsersToTask(createdTask.getId(), Set.copyOf(input.getAssignedUserIds()));
-        }
+            // Handle user assignments if provided
+            if (input.getAssignedUserIds() != null && !input.getAssignedUserIds().isEmpty()) {
+                Task result = userService.assignUsersToTask(createdTask.getId(), Set.copyOf(input.getAssignedUserIds()));
+                metricsService.incrementTaskCreated();
+                return result;
+            }
 
-        return createdTask;
+            metricsService.incrementTaskCreated();
+            return createdTask;
+        } finally {
+            metricsService.stopGraphQLMutationTimer(sample);
+        }
     }
 
     @MutationMapping
     @PreAuthorize("hasRole('USER')")
     public Boolean deleteTask(@Argument Long id) {
-        return taskService.deleteTask(id);
+        Timer.Sample sample = metricsService.startGraphQLMutationTimer();
+        try {
+            boolean result = taskService.deleteTask(id);
+            if (result) {
+                metricsService.incrementTaskDeleted();
+            }
+            return result;
+        } finally {
+            metricsService.stopGraphQLMutationTimer(sample);
+        }
     }
 
     @MutationMapping
     @PreAuthorize("hasRole('USER')")
     public Task updateTask(@Argument Long id, @Argument("input") @Valid UpdateTaskInput input) {
-        Task updatedTask = taskService.updateTask(
-            id,
-            input.getTitle(),
-            input.getDescription(),
-            input.getCompleted(),
-            input.getDueDate(),
-            input.getEstimationHours()
-        );
+        Timer.Sample sample = metricsService.startGraphQLMutationTimer();
+        try {
+            Task updatedTask = taskService.updateTask(
+                id,
+                input.getTitle(),
+                input.getDescription(),
+                input.getCompleted(),
+                input.getDueDate(),
+                input.getEstimationHours()
+            );
 
-        // Handle user assignments if provided
-        if (input.getAssignedUserIds() != null) {
-            return userService.assignUsersToTask(updatedTask.getId(), Set.copyOf(input.getAssignedUserIds()));
+            // Handle user assignments if provided
+            if (input.getAssignedUserIds() != null) {
+                Task result = userService.assignUsersToTask(updatedTask.getId(), Set.copyOf(input.getAssignedUserIds()));
+                metricsService.incrementTaskUpdated();
+                return result;
+            }
+
+            metricsService.incrementTaskUpdated();
+            return updatedTask;
+        } finally {
+            metricsService.stopGraphQLMutationTimer(sample);
         }
-
-        return updatedTask;
     }
 }

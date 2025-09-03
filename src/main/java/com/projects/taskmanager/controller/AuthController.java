@@ -7,6 +7,8 @@ import com.projects.taskmanager.model.Role;
 import com.projects.taskmanager.model.User;
 import com.projects.taskmanager.repository.UserRepository;
 import com.projects.taskmanager.security.JwtUtil;
+import com.projects.taskmanager.observability.MetricsService;
+import io.micrometer.core.instrument.Timer;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,39 +28,51 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final MetricsService metricsService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtUtil jwtUtil
+            JwtUtil jwtUtil,
+            MetricsService metricsService
     ) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.metricsService = metricsService;
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
+        Timer.Sample sample = metricsService.startAuthenticationTimer();
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getUsername(),
+                            loginRequest.getPassword()
+                    )
+            );
 
-        User user = (User) authentication.getPrincipal();
-        String jwt = jwtUtil.generateToken(user);
+            User user = (User) authentication.getPrincipal();
+            String jwt = jwtUtil.generateToken(user);
 
-        AuthResponse response = new AuthResponse(
-                jwt,
-                user.getUsername(),
-                user.getEmail(),
-                user.getRole().name()
-        );
+            AuthResponse response = new AuthResponse(
+                    jwt,
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getRole().name()
+            );
 
-        return ResponseEntity.ok(response);
+            metricsService.incrementAuthenticationSuccess();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            metricsService.incrementAuthenticationFailure();
+            throw e;
+        } finally {
+            metricsService.stopAuthenticationTimer(sample);
+        }
     }
 
     @PostMapping("/register")
@@ -84,6 +98,7 @@ public class AuthController {
         );
 
         User savedUser = userRepository.save(user);
+        metricsService.incrementUserCreated();
         String jwt = jwtUtil.generateToken(savedUser);
 
         AuthResponse response = new AuthResponse(
