@@ -25,3 +25,11 @@
 # H2 database files (if any)
 *.mv.db
 *.h2.db
+
+# Python virtual environment and cache
+client/venv/
+client/__pycache__/
+client/*.pyc
+*.pyo
+*.pyd
+.Python
