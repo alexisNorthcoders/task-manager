@@ -4,6 +4,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.projects.taskmanager.config.TaskProperties;
@@ -161,5 +165,110 @@ public class TaskService {
             throw new IllegalArgumentException("Estimation hours is unreasonably large");
         }
     }
-    
+
+    /**
+     * Get paginated tasks with optional filtering and sorting.
+     * @param page page number (0-based)
+     * @param size page size
+     * @param completed filter by completion status (optional)
+     * @param titleContains filter by title containing text (optional)
+     * @param sortBy sort field (optional)
+     * @param sortDirection sort direction (optional, defaults to ASC)
+     * @return paginated result
+     */
+    public Page<Task> getTasksPaginated(
+            int page,
+            int size,
+            Boolean completed,
+            String titleContains,
+            String sortBy,
+            String sortDirection) {
+
+        // Validate page parameters
+        if (page < 0) {
+            throw new IllegalArgumentException("Page number must be >= 0");
+        }
+        if (size <= 0 || size > 100) {
+            throw new IllegalArgumentException("Page size must be between 1 and 100");
+        }
+
+        // Create pageable with sorting
+        Sort sort = createSort(sortBy, sortDirection);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Use repository method with filters
+        return taskRepository.findTasksWithFilters(completed, titleContains, pageable);
+    }
+
+    /**
+     * Get paginated tasks with advanced filtering options.
+     * @param page page number (0-based)
+     * @param size page size
+     * @param completed filter by completion status (optional)
+     * @param titleContains filter by title containing text (optional)
+     * @param status filter by task status (optional)
+     * @param dueDateFrom filter by minimum due date (optional)
+     * @param dueDateTo filter by maximum due date (optional)
+     * @param estimationHoursMin filter by minimum estimation hours (optional)
+     * @param estimationHoursMax filter by maximum estimation hours (optional)
+     * @param sortBy sort field (optional)
+     * @param sortDirection sort direction (optional, defaults to ASC)
+     * @return paginated result
+     */
+    public Page<Task> getTasksAdvancedFiltered(
+            int page,
+            int size,
+            Boolean completed,
+            String titleContains,
+            TaskStatus status,
+            LocalDate dueDateFrom,
+            LocalDate dueDateTo,
+            Integer estimationHoursMin,
+            Integer estimationHoursMax,
+            String sortBy,
+            String sortDirection) {
+
+        // Validate page parameters
+        if (page < 0) {
+            throw new IllegalArgumentException("Page number must be >= 0");
+        }
+        if (size <= 0 || size > 100) {
+            throw new IllegalArgumentException("Page size must be between 1 and 100");
+        }
+
+        // Create pageable with sorting
+        Sort sort = createSort(sortBy, sortDirection);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Use repository method with advanced filters
+        return taskRepository.findTasksWithAdvancedFilters(
+            completed, titleContains, status, dueDateFrom, dueDateTo,
+            estimationHoursMin, estimationHoursMax, pageable);
+    }
+
+    /**
+     * Create a Sort object based on sortBy and sortDirection parameters.
+     * @param sortBy the field to sort by
+     * @param sortDirection the sort direction (ASC or DESC)
+     * @return Sort object
+     */
+    private Sort createSort(String sortBy, String sortDirection) {
+        if (sortBy == null) {
+            return Sort.by("id").ascending(); // Default sort
+        }
+
+        Sort.Direction direction = "DESC".equalsIgnoreCase(sortDirection)
+            ? Sort.Direction.DESC
+            : Sort.Direction.ASC;
+
+        return switch (sortBy.toUpperCase()) {
+            case "TITLE" -> Sort.by(direction, "title");
+            case "CREATED_AT" -> Sort.by(direction, "createdAt");
+            case "UPDATED_AT" -> Sort.by(direction, "updatedAt");
+            case "DUE_DATE" -> Sort.by(direction, "dueDate");
+            case "STATUS" -> Sort.by(direction, "status");
+            default -> Sort.by("id").ascending(); // Default sort
+        };
+    }
+
 }

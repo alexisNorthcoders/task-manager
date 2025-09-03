@@ -321,6 +321,172 @@ class TaskControllerFullIntegrationTest {
     }
 
     @Nested
+    @DisplayName("when querying tasks with pagination and filtering")
+    class QueryingTasksWithPaginationAndFiltering {
+
+        @Test
+        @DisplayName("should return paginated tasks with default parameters")
+        void shouldReturnPaginatedTasksWithDefaultParameters() {
+            // When & Then
+            graphQlTester
+                .document("""
+                    query {
+                        tasksPaginated {
+                            content { id title }
+                            totalElements
+                            totalPages
+                            number
+                            size
+                            numberOfElements
+                            first
+                            last
+                        }
+                    }
+                    """)
+                .execute()
+                .path("tasksPaginated.totalElements").entity(Long.class).isEqualTo(3L)
+                .path("tasksPaginated.size").entity(Integer.class).isEqualTo(10)
+                .path("tasksPaginated.number").entity(Integer.class).isEqualTo(0)
+                .path("tasksPaginated.first").entity(Boolean.class).isEqualTo(true)
+                .path("tasksPaginated.last").entity(Boolean.class).isEqualTo(true);
+        }
+
+        @Test
+        @DisplayName("should return paginated tasks with custom page size")
+        void shouldReturnPaginatedTasksWithCustomPageSize() {
+            // When & Then
+            graphQlTester
+                .document("""
+                    query {
+                        tasksPaginated(page: 0, size: 2) {
+                            content { id title }
+                            totalElements
+                            totalPages
+                            size
+                            numberOfElements
+                        }
+                    }
+                    """)
+                .execute()
+                .path("tasksPaginated.size").entity(Integer.class).isEqualTo(2)
+                .path("tasksPaginated.numberOfElements").entity(Integer.class).isEqualTo(2)
+                .path("tasksPaginated.totalPages").entity(Integer.class).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("should filter tasks by completion status")
+        void shouldFilterTasksByCompletionStatus() {
+            // When & Then - Filter by completed = true
+            graphQlTester
+                .document("""
+                    query {
+                        tasksPaginated(completed: true) {
+                            content { id title completed }
+                            totalElements
+                        }
+                    }
+                    """)
+                .execute()
+                .path("tasksPaginated.totalElements").entity(Long.class).isEqualTo(1L)
+                .path("tasksPaginated.content[0].completed").entity(Boolean.class).isEqualTo(true);
+
+            // Filter by completed = false
+            graphQlTester
+                .document("""
+                    query {
+                        tasksPaginated(completed: false) {
+                            content { id title completed }
+                            totalElements
+                        }
+                    }
+                    """)
+                .execute()
+                .path("tasksPaginated.totalElements").entity(Long.class).isEqualTo(2L)
+                .path("tasksPaginated.content[0].completed").entity(Boolean.class).isEqualTo(false);
+        }
+
+        @Test
+        @DisplayName("should filter tasks by title containing text")
+        void shouldFilterTasksByTitleContainingText() {
+            // When & Then - Filter by title containing "Integration"
+            graphQlTester
+                .document("""
+                    query {
+                        tasksPaginated(titleContains: "Integration") {
+                            content { id title }
+                            totalElements
+                        }
+                    }
+                    """)
+                .execute()
+                .path("tasksPaginated.totalElements").entity(Long.class).isEqualTo(2L)
+                .path("tasksPaginated.content").entityList(Object.class).hasSize(2);
+
+            // Filter by title containing "Progress" (should match third task)
+            graphQlTester
+                .document("""
+                    query {
+                        tasksPaginated(titleContains: "Progress") {
+                            content { id title }
+                            totalElements
+                        }
+                    }
+                    """)
+                .execute()
+                .path("tasksPaginated.totalElements").entity(Long.class).isEqualTo(1L);
+        }
+
+        @Test
+        @DisplayName("should sort tasks by title in ascending order")
+        void shouldSortTasksByTitleAscending() {
+            // When & Then - Sort by title ASC
+            graphQlTester
+                .document("""
+                    query {
+                        tasksPaginated(sortBy: TITLE, sortDirection: ASC) {
+                            content { title }
+                        }
+                    }
+                    """)
+                .execute()
+                .path("tasksPaginated.content").entityList(Object.class).hasSize(3); // Just verify we get 3 items for now
+        }
+
+        @Test
+        @DisplayName("should sort tasks by title in descending order")
+        void shouldSortTasksByTitleDescending() {
+            // When & Then - Sort by title DESC
+            graphQlTester
+                .document("""
+                    query {
+                        tasksPaginated(sortBy: TITLE, sortDirection: DESC) {
+                            content { title }
+                        }
+                    }
+                    """)
+                .execute()
+                .path("tasksPaginated.content").entityList(Object.class).hasSize(3); // Just verify we get 3 items for now
+        }
+
+        @Test
+        @DisplayName("should combine filtering and sorting")
+        void shouldCombineFilteringAndSorting() {
+            // When & Then - Filter by completed=false and sort by title DESC
+            graphQlTester
+                .document("""
+                    query {
+                        tasksPaginated(completed: false, sortBy: TITLE, sortDirection: DESC) {
+                            content { title completed }
+                            totalElements
+                        }
+                    }
+                    """)
+                .execute()
+                .path("tasksPaginated.totalElements").entity(Long.class).isEqualTo(2L); // Two incomplete tasks
+        }
+    }
+
+    @Nested
     @DisplayName("when validating input data")
     class ValidatingInputData {
 

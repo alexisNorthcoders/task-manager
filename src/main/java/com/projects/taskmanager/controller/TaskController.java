@@ -3,6 +3,8 @@ package com.projects.taskmanager.controller;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -33,6 +35,48 @@ public class TaskController {
     @QueryMapping
     public List<Task> tasksByStatus(@Argument TaskStatus status) {
         return taskService.getAllTasksByStatus(status);
+    }
+
+    @QueryMapping
+    public Page<Task> tasksPaginated(
+            @Argument Integer page,
+            @Argument Integer size,
+            @Argument Boolean completed,
+            @Argument String titleContains,
+            @Argument String sortBy,
+            @Argument String sortDirection) {
+
+        // Set defaults for optional parameters
+        int pageNum = page != null ? page : 0;
+        int pageSize = size != null ? size : 10;
+        String sortDir = sortDirection != null ? sortDirection : "ASC";
+
+        return taskService.getTasksPaginated(pageNum, pageSize, completed, titleContains, sortBy, sortDir);
+    }
+
+    @QueryMapping
+    public Page<Task> tasksAdvancedFiltered(
+            @Argument Integer page,
+            @Argument Integer size,
+            @Argument Boolean completed,
+            @Argument String titleContains,
+            @Argument TaskStatus status,
+            @Argument @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDateFrom,
+            @Argument @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDateTo,
+            @Argument Integer estimationHoursMin,
+            @Argument Integer estimationHoursMax,
+            @Argument String sortBy,
+            @Argument String sortDirection) {
+
+        // Set defaults for optional parameters
+        int pageNum = page != null ? page : 0;
+        int pageSize = size != null ? size : 10;
+        String sortDir = sortDirection != null ? sortDirection : "ASC";
+
+        return taskService.getTasksAdvancedFiltered(
+            pageNum, pageSize, completed, titleContains, status,
+            dueDateFrom, dueDateTo, estimationHoursMin, estimationHoursMax,
+            sortBy, sortDir);
     }
 
     @QueryMapping

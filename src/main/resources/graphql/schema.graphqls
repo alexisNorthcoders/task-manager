@@ -16,8 +16,40 @@ type Task{
     estimationHours: Int
 }
 
+type TaskPage {
+    content: [Task!]!
+    totalElements: Int!
+    totalPages: Int!
+    number: Int!
+    size: Int!
+    numberOfElements: Int!
+    first: Boolean!
+    last: Boolean!
+}
+
+enum SortDirection {
+    ASC
+    DESC
+}
+
+enum TaskSortBy {
+    TITLE
+    CREATED_AT
+    UPDATED_AT
+    DUE_DATE
+    STATUS
+}
+
 type Query {
     tasks: [Task!]!
+    tasksPaginated(
+        page: Int = 0
+        size: Int = 10
+        completed: Boolean
+        titleContains: String
+        sortBy: TaskSortBy
+        sortDirection: SortDirection = ASC
+    ): TaskPage!
     task(id: ID!): Task
     tasksByStatus(status: TaskStatus!): [Task!]!
 }
