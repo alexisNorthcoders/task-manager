@@ -70,7 +70,16 @@ class TaskManagerClient:
             print(f"✅ Registration successful! Welcome {auth_data['username']} ({auth_data['role']})")
             return True
         else:
-            print(f"❌ Registration failed: {result['error']}")
+            error_msg = result['error']
+            if "403" in error_msg:
+                print(f"❌ Registration failed: {error_msg}")
+                print("💡 Common issues:")
+                print("   - Password must be at least 6 characters long")
+                print("   - Username must be 3-50 characters")
+                print("   - Email must be valid format")
+                print("   - Username or email might already exist")
+            else:
+                print(f"❌ Registration failed: {error_msg}")
             return False
     
     def login(self, username: str, password: str) -> bool:
@@ -471,11 +480,16 @@ def main():
                 break
             
             elif choice == "1":
+                print("📝 Registration Requirements:")
+                print("   - Username: 3-50 characters")
+                print("   - Email: valid email format")
+                print("   - Password: at least 6 characters")
+                print()
                 username = input("Username: ")
                 email = input("Email: ")
                 first_name = input("First Name: ")
                 last_name = input("Last Name: ")
-                password = input("Password: ")
+                password = input("Password (min 6 chars): ")
                 client.register(username, email, first_name, last_name, password)
             
             elif choice == "2":

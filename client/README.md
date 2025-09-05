@@ -128,6 +128,16 @@ Your application creates these default users (from DataLoader configuration):
 
 You can login with these credentials to test different permission levels.
 
+### Registration Requirements
+
+When creating new users, ensure:
+- **Username**: 3-50 characters
+- **Email**: valid email format (user@domain.com)
+- **Password**: at least 6 characters
+- **Names**: cannot be blank
+
+The client will now provide helpful error messages if validation fails.
+
 ## API Endpoints Tested
 
 ### REST Authentication Endpoints
