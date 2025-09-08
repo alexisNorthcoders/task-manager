@@ -111,14 +111,24 @@ public class UserController {
         // Batch load users for all tasks
         List<User> users = userRepository.findUsersByAssignedTaskIds(taskIds);
         
-        // Group users by task
-        return users.stream()
+        // Group users by task, ensuring every task has a list (even if empty)
+        Map<Task, List<User>> result = tasks.stream()
+                .collect(Collectors.toMap(
+                        task -> task,
+                        task -> new java.util.ArrayList<>() // Start with empty mutable list
+                ));
+        
+        // Fill in the users for tasks that have them
+        users.stream()
                 .flatMap(user -> user.getAssignedTasks().stream()
                         .filter(task -> taskIds.contains(task.getId()))
                         .map(task -> Map.entry(task, user)))
-                .collect(Collectors.groupingBy(
-                        Map.Entry::getKey,
-                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())
-                ));
+                .forEach(entry -> {
+                    Task task = entry.getKey();
+                    User user = entry.getValue();
+                    result.get(task).add(user);
+                });
+        
+        return result;
     }
 }

@@ -4,6 +4,11 @@ enum TaskStatus {
     DONE
 }
 
+enum Role {
+    USER
+    ADMIN
+}
+
 type User {
     id: ID!
     username: String!
@@ -11,6 +16,7 @@ type User {
     firstName: String!
     lastName: String!
     fullName: String!
+    role: Role!
     createdAt: String
     updatedAt: String
     assignedTasks: [Task!]!

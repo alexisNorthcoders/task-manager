@@ -46,7 +46,7 @@ public class Task {
 
     private Integer estimationHours; // optional estimate in hours
 
-    @ManyToMany
+    @ManyToMany(fetch = jakarta.persistence.FetchType.EAGER)
     @JoinTable(
         name = "task_users",
         joinColumns = @JoinColumn(name = "task_id"),
@@ -139,6 +139,9 @@ public class Task {
     }
 
     public Set<User> getAssignedUsers() {
+        if (assignedUsers == null) {
+            assignedUsers = new HashSet<>();
+        }
         return assignedUsers;
     }
 
