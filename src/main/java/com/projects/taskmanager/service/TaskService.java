@@ -96,7 +96,7 @@ public class TaskService {
      * @param completed new completion status (optional - only updates if not null)
      * @return the updated task
      */
-    public Task updateTask(Long id, String title, String description, Boolean completed, String dueDate, Integer estimationHours) {
+    public Task updateTask(Long id, String title, String description, Boolean completed, TaskStatus status, String dueDate, Double estimationHours) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException(id));
         
@@ -113,8 +113,8 @@ public class TaskService {
         if (completed != null) {
             task.setCompleted(completed);
         }
-        if (dueDate != null) {
-            task.setDueDate(parseDueDate(dueDate));
+        if (status != null) {
+            task.setStatus(status);
         }
         if (dueDate != null) {
             task.setDueDate(parseDueDate(dueDate));
@@ -155,7 +155,7 @@ public class TaskService {
         }
     }
 
-    private void enforceEstimationHours(Integer estimationHours) {
+    private void enforceEstimationHours(Double estimationHours) {
         if (estimationHours == null) {
             return;
         }
@@ -224,8 +224,8 @@ public class TaskService {
             TaskStatus status,
             LocalDate dueDateFrom,
             LocalDate dueDateTo,
-            Integer estimationHoursMin,
-            Integer estimationHoursMax,
+            Double estimationHoursMin,
+            Double estimationHoursMax,
             String sortBy,
             String sortDirection) {
 

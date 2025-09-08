@@ -1,5 +1,6 @@
 package com.projects.taskmanager.graphql.input;
 
+import com.projects.taskmanager.model.TaskStatus;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -10,10 +11,11 @@ public class UpdateTaskInput {
     private String title;
     private String description;
     private Boolean completed;
+    private TaskStatus status;
     private String dueDate;
     @Min(0)
     @Max(10000)
-    private Integer estimationHours;
+    private Double estimationHours;
 
     private List<Long> assignedUserIds;
 
@@ -44,6 +46,14 @@ public class UpdateTaskInput {
         this.completed = completed;
     }
 
+    public TaskStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(TaskStatus status) {
+        this.status = status;
+    }
+
     public String getDueDate() {
         return dueDate;
     }
@@ -52,11 +62,11 @@ public class UpdateTaskInput {
         this.dueDate = dueDate;
     }
 
-    public Integer getEstimationHours() {
+    public Double getEstimationHours() {
         return estimationHours;
     }
 
-    public void setEstimationHours(Integer estimationHours) {
+    public void setEstimationHours(Double estimationHours) {
         this.estimationHours = estimationHours;
     }
 

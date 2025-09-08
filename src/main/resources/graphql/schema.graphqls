@@ -31,7 +31,7 @@ type Task{
     createdAt: String
     updatedAt: String
     dueDate: String
-    estimationHours: Int
+    estimationHours: Float
     assignedUsers: [User!]!
 }
 
@@ -95,7 +95,7 @@ input CreateTaskInput {
     description: String
     completed: Boolean
     dueDate: String
-    estimationHours: Int
+    estimationHours: Float
     assignedUserIds: [ID!]
 }
 
@@ -103,8 +103,9 @@ input UpdateTaskInput {
     title: String
     description: String
     completed: Boolean
+    status: TaskStatus
     dueDate: String
-    estimationHours: Int
+    estimationHours: Float
     assignedUserIds: [ID!]
 }
 

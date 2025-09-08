@@ -15,7 +15,7 @@ public class CreateTaskInput {
     private String dueDate;
     @Min(0)
     @Max(10000)
-    private Integer estimationHours;
+    private Double estimationHours;
 
     private List<Long> assignedUserIds;
 
@@ -54,11 +54,11 @@ public class CreateTaskInput {
         this.dueDate = dueDate;
     }
 
-    public Integer getEstimationHours() {
+    public Double getEstimationHours() {
         return estimationHours;
     }
 
-    public void setEstimationHours(Integer estimationHours) {
+    public void setEstimationHours(Double estimationHours) {
         this.estimationHours = estimationHours;
     }
 

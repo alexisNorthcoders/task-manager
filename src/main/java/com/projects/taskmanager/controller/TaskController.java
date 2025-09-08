@@ -159,6 +159,7 @@ public class TaskController {
                 input.getTitle(),
                 input.getDescription(),
                 input.getCompleted(),
+                input.getStatus(),
                 input.getDueDate(),
                 input.getEstimationHours()
             );

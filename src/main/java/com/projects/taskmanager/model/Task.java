@@ -44,7 +44,7 @@ public class Task {
 
     private LocalDate dueDate;
 
-    private Integer estimationHours; // optional estimate in hours
+    private Double estimationHours; // optional estimate in hours
 
     @ManyToMany(fetch = jakarta.persistence.FetchType.EAGER)
     @JoinTable(
@@ -130,11 +130,11 @@ public class Task {
         this.dueDate = dueDate;
     }
 
-    public Integer getEstimationHours() {
+    public Double getEstimationHours() {
         return estimationHours;
     }
 
-    public void setEstimationHours(Integer estimationHours) {
+    public void setEstimationHours(Double estimationHours) {
         this.estimationHours = estimationHours;
     }
 
