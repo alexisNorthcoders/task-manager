@@ -39,7 +39,7 @@ class TaskControllerFullIntegrationTest {
         // Seed test data
         Task task1 = Task.create("Integration Test Task 1", "Description 1");
         task1.setDueDate(LocalDate.now().plusDays(5));
-        task1.setEstimationHours(3);
+        task1.setEstimationHours(3.0);
         taskRepository.save(task1);
 
         Task task2 = Task.create("Integration Test Task 2", "Description 2");

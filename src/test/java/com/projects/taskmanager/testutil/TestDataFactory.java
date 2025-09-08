@@ -34,7 +34,7 @@ public class TestDataFactory {
         Task task = Task.create("Full Task", "Complete task with all fields");
         task.setCompleted(false);
         task.setDueDate(LocalDate.now().plusDays(7));
-        task.setEstimationHours(5);
+        task.setEstimationHours(5.0);
         return task;
     }
 
@@ -62,7 +62,7 @@ public class TestDataFactory {
         input.setDescription("New task description");
         input.setCompleted(false);
         input.setDueDate("2024-12-31");
-        input.setEstimationHours(3);
+        input.setEstimationHours(3.0);
         return input;
     }
 
@@ -70,7 +70,7 @@ public class TestDataFactory {
         CreateTaskInput input = new CreateTaskInput();
         // Missing required title
         input.setDescription("Description without title");
-        input.setEstimationHours(-1); // Invalid estimation
+        input.setEstimationHours(-1.0); // Invalid estimation
         return input;
     }
 
@@ -90,7 +90,7 @@ public class TestDataFactory {
     public static UpdateTaskInput createInvalidUpdateInput() {
         UpdateTaskInput input = new UpdateTaskInput();
         input.setTitle(""); // Empty title
-        input.setEstimationHours(-5); // Invalid estimation
+        input.setEstimationHours(-5.0); // Invalid estimation
         return input;
     }
 }

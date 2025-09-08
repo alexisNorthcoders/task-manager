@@ -242,7 +242,7 @@ class TaskServiceTest {
             when(taskRepository.save(existingTask)).thenReturn(updatedTask);
 
             // When
-            taskService.updateTask(taskId, newTitle, newDescription, newCompleted, null, null);
+            taskService.updateTask(taskId, newTitle, newDescription, newCompleted, null, null, null);
 
             // Then
             verify(taskRepository).findById(taskId);
@@ -270,7 +270,7 @@ class TaskServiceTest {
             when(taskRepository.save(existingTask)).thenReturn(existingTask);
 
             // When - only update completion status
-            taskService.updateTask(taskId, null, null, true, null, null);
+            taskService.updateTask(taskId, null, null, true, null, null, null);
 
             // Then
             assertEquals(originalTitle, existingTask.getTitle()); // Should remain unchanged
@@ -289,7 +289,7 @@ class TaskServiceTest {
             // When & Then
             assertThrows(
                 TaskNotFoundException.class,
-                () -> taskService.updateTask(taskId, "New Title", null, null, null, null)
+                () -> taskService.updateTask(taskId, "New Title", null, null, null, null, null)
             );
             
             verify(taskRepository).findById(taskId);
@@ -307,7 +307,7 @@ class TaskServiceTest {
             // When & Then
             IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> taskService.updateTask(taskId, null, null, null, "invalid-date", null)
+                () -> taskService.updateTask(taskId, null, null, null, null, "invalid-date", null)
             );
             
             assertTrue(exception.getMessage().contains("Invalid dueDate format"));
@@ -324,7 +324,7 @@ class TaskServiceTest {
             when(taskRepository.save(existingTask)).thenReturn(existingTask);
 
             // When
-            taskService.updateTask(taskId, null, null, null, validDate, null);
+            taskService.updateTask(taskId, null, null, null, null, validDate, null);
 
             // Then
             assertEquals(LocalDate.parse(validDate), existingTask.getDueDate());
@@ -341,14 +341,14 @@ class TaskServiceTest {
             // When & Then (negative hours)
             IllegalArgumentException exception1 = assertThrows(
                 IllegalArgumentException.class,
-                () -> taskService.updateTask(taskId, null, null, null, null, -1)
+                () -> taskService.updateTask(taskId, null, null, null, null, null, -1.0)
             );
             assertTrue(exception1.getMessage().contains("must be >= 0"));
 
             // When & Then (unreasonably large hours)
             IllegalArgumentException exception2 = assertThrows(
                 IllegalArgumentException.class,
-                () -> taskService.updateTask(taskId, null, null, null, null, 20000)
+                () -> taskService.updateTask(taskId, null, null, null, null, null, 20000.0)
             );
             assertTrue(exception2.getMessage().contains("unreasonably large"));
         }
