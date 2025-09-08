@@ -17,6 +17,10 @@ import com.projects.taskmanager.repository.TaskRepository;
 import com.projects.taskmanager.util.TextNormalizer;
 import com.projects.taskmanager.service.exception.TaskNotFoundException;
 import com.projects.taskmanager.service.exception.UserNotFoundException;
+import com.projects.taskmanager.graphql.BulkOperationResult;
+import com.projects.taskmanager.graphql.input.BulkUpdateTaskInput;
+import java.util.Set;
+import java.util.ArrayList;
 
 /**
  * Service for managing tasks.
@@ -26,15 +30,17 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final TaskProperties taskProperties;
     private final TextNormalizer textNormalizer;
+    private final WebSocketNotificationService notificationService;
 
     /**
      * Constructor for TaskService.
      * @param taskRepository the repository to use for task operations
      */
-    public TaskService(TaskRepository taskRepository, TaskProperties taskProperties, TextNormalizer textNormalizer) {
+    public TaskService(TaskRepository taskRepository, TaskProperties taskProperties, TextNormalizer textNormalizer, WebSocketNotificationService notificationService) {
         this.taskRepository = taskRepository;
         this.taskProperties = taskProperties;
         this.textNormalizer = textNormalizer;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -72,7 +78,12 @@ public class TaskService {
         task.setTitle(textNormalizer.normalizeTitle(task.getTitle()));
         enforceTitleLength(task.getTitle());
         enforceDescriptionLength(task.getDescription());
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+        
+        // Send WebSocket notification
+        notificationService.notifyTaskCreated(savedTask);
+        
+        return savedTask;
     }
 
     /**
@@ -83,6 +94,10 @@ public class TaskService {
     public boolean deleteTask(Long id) {
         if (taskRepository.existsById(id)) {
             taskRepository.deleteById(id);
+            
+            // Send WebSocket notification
+            notificationService.notifyTaskDeleted(id);
+            
             return true;
         }
         return false;
@@ -124,7 +139,12 @@ public class TaskService {
             task.setEstimationHours(estimationHours);
         }
         
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+        
+        // Send WebSocket notification
+        notificationService.notifyTaskUpdated(savedTask);
+        
+        return savedTask;
     }
 
     private void enforceTitleLength(String title) {
@@ -272,6 +292,89 @@ public class TaskService {
         };
     }
 
+    /**
+     * Bulk update multiple tasks with the same values.
+     * @param taskIds list of task IDs to update
+     * @param input bulk update input with new values
+     * @return bulk operation result
+     */
+    public BulkOperationResult bulkUpdateTasks(List<Long> taskIds, BulkUpdateTaskInput input) {
+        if (taskIds == null || taskIds.isEmpty()) {
+            return new BulkOperationResult(false, 0, List.of("No task IDs provided"));
+        }
 
+        List<String> errors = new ArrayList<>();
+        int updatedCount = 0;
+
+        for (Long taskId : taskIds) {
+            try {
+                Task task = taskRepository.findById(taskId)
+                        .orElseThrow(() -> new TaskNotFoundException(taskId));
+
+                // Update fields if provided
+                if (input.getStatus() != null) {
+                    task.setStatus(input.getStatus());
+                }
+                if (input.getCompleted() != null) {
+                    task.setCompleted(input.getCompleted());
+                }
+                if (input.getDueDate() != null) {
+                    task.setDueDate(parseDueDate(input.getDueDate()));
+                }
+
+                taskRepository.save(task);
+                updatedCount++;
+            } catch (Exception e) {
+                errors.add("Failed to update task " + taskId + ": " + e.getMessage());
+            }
+        }
+
+        boolean success = errors.isEmpty();
+        BulkOperationResult result = new BulkOperationResult(success, updatedCount, errors);
+        
+        // Send WebSocket notification
+        if (updatedCount > 0) {
+            notificationService.notifyBulkOperation("BULK_UPDATE", updatedCount);
+        }
+        
+        return result;
+    }
+
+    /**
+     * Bulk delete multiple tasks.
+     * @param taskIds list of task IDs to delete
+     * @return bulk operation result
+     */
+    public BulkOperationResult bulkDeleteTasks(List<Long> taskIds) {
+        if (taskIds == null || taskIds.isEmpty()) {
+            return new BulkOperationResult(false, 0, List.of("No task IDs provided"));
+        }
+
+        List<String> errors = new ArrayList<>();
+        int deletedCount = 0;
+
+        for (Long taskId : taskIds) {
+            try {
+                if (taskRepository.existsById(taskId)) {
+                    taskRepository.deleteById(taskId);
+                    deletedCount++;
+                } else {
+                    errors.add("Task not found: " + taskId);
+                }
+            } catch (Exception e) {
+                errors.add("Failed to delete task " + taskId + ": " + e.getMessage());
+            }
+        }
+
+        boolean success = errors.isEmpty();
+        BulkOperationResult result = new BulkOperationResult(success, deletedCount, errors);
+        
+        // Send WebSocket notification
+        if (deletedCount > 0) {
+            notificationService.notifyBulkOperation("BULK_DELETE", deletedCount);
+        }
+        
+        return result;
+    }
 
 }

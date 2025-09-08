@@ -18,6 +18,8 @@ import com.projects.taskmanager.service.TaskService;
 import com.projects.taskmanager.service.UserService;
 import com.projects.taskmanager.graphql.input.CreateTaskInput;
 import com.projects.taskmanager.graphql.input.UpdateTaskInput;
+import com.projects.taskmanager.graphql.input.BulkUpdateTaskInput;
+import com.projects.taskmanager.graphql.BulkOperationResult;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.projects.taskmanager.graphql.GraphQLUserContext;
@@ -82,8 +84,8 @@ public class TaskController {
             @Argument TaskStatus status,
             @Argument @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDateFrom,
             @Argument @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDateTo,
-            @Argument Integer estimationHoursMin,
-            @Argument Integer estimationHoursMax,
+            @Argument Double estimationHoursMin,
+            @Argument Double estimationHoursMax,
             @Argument String sortBy,
             @Argument String sortDirection) {
 
@@ -173,6 +175,50 @@ public class TaskController {
 
             metricsService.incrementTaskUpdated();
             return updatedTask;
+        } finally {
+            metricsService.stopGraphQLMutationTimer(sample);
+        }
+    }
+
+    @MutationMapping
+    @PreAuthorize("hasRole('USER')")
+    public BulkOperationResult bulkUpdateTasks(@Argument List<Long> taskIds, @Argument("input") @Valid BulkUpdateTaskInput input) {
+        Timer.Sample sample = metricsService.startGraphQLMutationTimer();
+        try {
+            BulkOperationResult result = taskService.bulkUpdateTasks(taskIds, input);
+            
+            // Handle user assignments if provided
+            if (input.getAssignedUserIds() != null && !input.getAssignedUserIds().isEmpty() && result.isSuccess()) {
+                BulkOperationResult assignResult = userService.bulkAssignUsers(taskIds, input.getAssignedUserIds());
+                if (!assignResult.isSuccess()) {
+                    result.getErrors().addAll(assignResult.getErrors());
+                    result.setSuccess(false);
+                }
+            }
+            
+            return result;
+        } finally {
+            metricsService.stopGraphQLMutationTimer(sample);
+        }
+    }
+
+    @MutationMapping
+    @PreAuthorize("hasRole('USER')")
+    public BulkOperationResult bulkDeleteTasks(@Argument List<Long> taskIds) {
+        Timer.Sample sample = metricsService.startGraphQLMutationTimer();
+        try {
+            return taskService.bulkDeleteTasks(taskIds);
+        } finally {
+            metricsService.stopGraphQLMutationTimer(sample);
+        }
+    }
+
+    @MutationMapping
+    @PreAuthorize("hasRole('USER')")
+    public BulkOperationResult bulkAssignUsers(@Argument List<Long> taskIds, @Argument List<Long> userIds) {
+        Timer.Sample sample = metricsService.startGraphQLMutationTimer();
+        try {
+            return userService.bulkAssignUsers(taskIds, userIds);
         } finally {
             metricsService.stopGraphQLMutationTimer(sample);
         }

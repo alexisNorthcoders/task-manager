@@ -12,6 +12,8 @@ import com.projects.taskmanager.repository.TaskRepository;
 import com.projects.taskmanager.repository.UserRepository;
 import com.projects.taskmanager.service.exception.TaskNotFoundException;
 import com.projects.taskmanager.service.exception.UserNotFoundException;
+import com.projects.taskmanager.graphql.BulkOperationResult;
+import java.util.ArrayList;
 
 /**
  * Service for managing users.
@@ -21,15 +23,17 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
+    private final WebSocketNotificationService notificationService;
 
     /**
      * Constructor for UserService.
      * @param userRepository the repository to use for user operations
      * @param taskRepository the repository to use for task operations
      */
-    public UserService(UserRepository userRepository, TaskRepository taskRepository) {
+    public UserService(UserRepository userRepository, TaskRepository taskRepository, WebSocketNotificationService notificationService) {
         this.userRepository = userRepository;
         this.taskRepository = taskRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -157,7 +161,13 @@ public class UserService {
             task.assignUser(user);
         }
 
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+        
+        // Send WebSocket notification to assigned users
+        notificationService.notifyAssignedUsers(savedTask, "TASK_ASSIGNED");
+        notificationService.notifyTaskUpdated(savedTask);
+        
+        return savedTask;
     }
 
     /**
@@ -176,7 +186,12 @@ public class UserService {
             task.unassignUser(user);
         }
 
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+        
+        // Send WebSocket notification
+        notificationService.notifyTaskUpdated(savedTask);
+        
+        return savedTask;
     }
 
     /**
@@ -186,5 +201,54 @@ public class UserService {
      */
     public List<User> getUsersByTaskId(Long taskId) {
         return userRepository.findUsersByTaskId(taskId);
+    }
+
+    /**
+     * Bulk assign users to multiple tasks.
+     * @param taskIds the task IDs
+     * @param userIds the user IDs to assign
+     * @return bulk operation result
+     */
+    public BulkOperationResult bulkAssignUsers(List<Long> taskIds, List<Long> userIds) {
+        if (taskIds == null || taskIds.isEmpty()) {
+            return new BulkOperationResult(false, 0, List.of("No task IDs provided"));
+        }
+        if (userIds == null || userIds.isEmpty()) {
+            return new BulkOperationResult(false, 0, List.of("No user IDs provided"));
+        }
+
+        List<String> errors = new ArrayList<>();
+        int updatedCount = 0;
+
+        // Validate all users exist first
+        for (Long userId : userIds) {
+            if (!userRepository.existsById(userId)) {
+                errors.add("User not found: " + userId);
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            return new BulkOperationResult(false, 0, errors);
+        }
+
+        // Process each task
+        for (Long taskId : taskIds) {
+            try {
+                assignUsersToTask(taskId, Set.copyOf(userIds));
+                updatedCount++;
+            } catch (Exception e) {
+                errors.add("Failed to assign users to task " + taskId + ": " + e.getMessage());
+            }
+        }
+
+        boolean success = errors.isEmpty();
+        BulkOperationResult result = new BulkOperationResult(success, updatedCount, errors);
+        
+        // Send WebSocket notification
+        if (updatedCount > 0) {
+            notificationService.notifyBulkOperation("BULK_ASSIGN", updatedCount);
+        }
+        
+        return result;
     }
 }

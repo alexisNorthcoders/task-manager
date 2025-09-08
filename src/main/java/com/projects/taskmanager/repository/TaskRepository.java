@@ -47,8 +47,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
         @Param("status") TaskStatus status,
         @Param("dueDateFrom") LocalDate dueDateFrom,
         @Param("dueDateTo") LocalDate dueDateTo,
-        @Param("estimationHoursMin") Integer estimationHoursMin,
-        @Param("estimationHoursMax") Integer estimationHoursMax,
+        @Param("estimationHoursMin") Double estimationHoursMin,
+        @Param("estimationHoursMax") Double estimationHoursMax,
         Pageable pageable
     );
 

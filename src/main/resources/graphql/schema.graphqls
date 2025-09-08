@@ -35,6 +35,16 @@ type Task{
     assignedUsers: [User!]!
 }
 
+type TaskTemplate {
+    id: ID!
+    name: String!
+    title: String!
+    description: String
+    estimationHours: Float
+    createdAt: String
+    updatedAt: String
+}
+
 type TaskPage {
     content: [Task!]!
     totalElements: Int!
@@ -69,11 +79,28 @@ type Query {
         sortBy: TaskSortBy
         sortDirection: SortDirection = ASC
     ): TaskPage!
+    tasksAdvancedFiltered(
+        page: Int = 0
+        size: Int = 10
+        completed: Boolean
+        titleContains: String
+        status: TaskStatus
+        dueDateFrom: String
+        dueDateTo: String
+        estimationHoursMin: Float
+        estimationHoursMax: Float
+        sortBy: TaskSortBy
+        sortDirection: SortDirection = ASC
+    ): TaskPage!
     task(id: ID!): Task
     tasksByStatus(status: TaskStatus!): [Task!]!
     users: [User!]!
     user(id: ID!): User
     usersByTask(taskId: ID!): [User!]!
+    
+    # Task Templates
+    taskTemplates: [TaskTemplate!]!
+    taskTemplate(id: ID!): TaskTemplate
 }
 
 input CreateUserInput {
@@ -99,6 +126,20 @@ input CreateTaskInput {
     assignedUserIds: [ID!]
 }
 
+input CreateTaskTemplateInput {
+    name: String!
+    title: String!
+    description: String
+    estimationHours: Float
+}
+
+input UpdateTaskTemplateInput {
+    name: String
+    title: String
+    description: String
+    estimationHours: Float
+}
+
 input UpdateTaskInput {
     title: String
     description: String
@@ -107,6 +148,19 @@ input UpdateTaskInput {
     dueDate: String
     estimationHours: Float
     assignedUserIds: [ID!]
+}
+
+input BulkUpdateTaskInput {
+    status: TaskStatus
+    completed: Boolean
+    assignedUserIds: [ID!]
+    dueDate: String
+}
+
+type BulkOperationResult {
+    success: Boolean!
+    updatedCount: Int!
+    errors: [String!]!
 }
 
 type Mutation {
@@ -118,4 +172,15 @@ type Mutation {
     deleteUser(id: ID!): Boolean!
     assignUsersToTask(taskId: ID!, userIds: [ID!]!): Task!
     unassignUsersFromTask(taskId: ID!, userIds: [ID!]!): Task!
+    
+    # Bulk operations
+    bulkUpdateTasks(taskIds: [ID!]!, input: BulkUpdateTaskInput!): BulkOperationResult!
+    bulkDeleteTasks(taskIds: [ID!]!): BulkOperationResult!
+    bulkAssignUsers(taskIds: [ID!]!, userIds: [ID!]!): BulkOperationResult!
+    
+    # Task Templates
+    createTaskTemplate(input: CreateTaskTemplateInput!): TaskTemplate!
+    updateTaskTemplate(id: ID!, input: UpdateTaskTemplateInput!): TaskTemplate!
+    deleteTaskTemplate(id: ID!): Boolean!
+    createTaskFromTemplate(templateId: ID!, assignedUserIds: [ID!]): Task!
 }
