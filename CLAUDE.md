@@ -97,4 +97,4 @@ The application loads default users on startup:
 4. **Authentication changes**: Modify JWT utilities and security configuration
 5. **Testing new features**: Use Python client's test scenario (option 12) for end-to-end validation
 ### Agent Workflows
-- Agent task: Commit local changes following repository style ([docs/agent-commit-workflow.md](docs/agent-commit-workflow.md))
+- Agent task: commit changes ([docs/agent-commit-workflow.md](docs/agent-commit-workflow.md))

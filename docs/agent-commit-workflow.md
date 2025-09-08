@@ -1,5 +1,7 @@
 ## Agent Task: Commit local changes following repository style
 
+Short alias: Agent task: commit changes
+
 ### Goal
 Stage and commit local changes, using the existing conventional commit style in this repository.
 
