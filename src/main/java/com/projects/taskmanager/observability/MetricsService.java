@@ -25,6 +25,11 @@ public class MetricsService {
     private final Counter userDeletedCounter;
     private final Counter authenticationCounter;
     private final Counter authenticationFailureCounter;
+    private final Counter commentCreatedCounter;
+    private final Counter commentUpdatedCounter;
+    private final Counter commentDeletedCounter;
+    private final Counter attachmentUploadedCounter;
+    private final Counter attachmentDeletedCounter;
     
     // Timers for tracking latency
     private final Timer graphqlQueryTimer;
@@ -66,6 +71,26 @@ public class MetricsService {
                 
         this.authenticationFailureCounter = Counter.builder("authentication.failure")
                 .description("Number of failed authentications")
+                .register(meterRegistry);
+                
+        this.commentCreatedCounter = Counter.builder("comment.created")
+                .description("Number of comments created")
+                .register(meterRegistry);
+                
+        this.commentUpdatedCounter = Counter.builder("comment.updated")
+                .description("Number of comments updated")
+                .register(meterRegistry);
+                
+        this.commentDeletedCounter = Counter.builder("comment.deleted")
+                .description("Number of comments deleted")
+                .register(meterRegistry);
+                
+        this.attachmentUploadedCounter = Counter.builder("attachment.uploaded")
+                .description("Number of attachments uploaded")
+                .register(meterRegistry);
+                
+        this.attachmentDeletedCounter = Counter.builder("attachment.deleted")
+                .description("Number of attachments deleted")
                 .register(meterRegistry);
         
         // Initialize timers
@@ -176,5 +201,27 @@ public class MetricsService {
 
     public void recordActiveTasks(int count) {
         meterRegistry.gauge("tasks.active", count);
+    }
+
+    // Comment metrics
+    public void incrementCommentCreated() {
+        commentCreatedCounter.increment();
+    }
+
+    public void incrementCommentUpdated() {
+        commentUpdatedCounter.increment();
+    }
+
+    public void incrementCommentDeleted() {
+        commentDeletedCounter.increment();
+    }
+
+    // Attachment metrics
+    public void incrementAttachmentUploaded() {
+        attachmentUploadedCounter.increment();
+    }
+
+    public void incrementAttachmentDeleted() {
+        attachmentDeletedCounter.increment();
     }
 }

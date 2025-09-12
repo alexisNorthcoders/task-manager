@@ -33,6 +33,9 @@ type Task{
     dueDate: String
     estimationHours: Float
     assignedUsers: [User!]!
+    comments: [TaskComment!]!
+    activities: [TaskActivity!]!
+    attachments: [TaskAttachment!]!
 }
 
 type TaskTemplate {
@@ -69,6 +72,60 @@ enum TaskSortBy {
     STATUS
 }
 
+type TaskComment {
+    id: ID!
+    task: Task!
+    author: User!
+    content: String!
+    parentComment: TaskComment
+    createdAt: String!
+    updatedAt: String!
+    replies: [TaskComment!]!
+}
+
+type TaskActivity {
+    id: ID!
+    task: Task!
+    user: User!
+    activityType: ActivityType!
+    description: String!
+    oldValue: String
+    newValue: String
+    createdAt: String!
+}
+
+type TaskAttachment {
+    id: ID!
+    task: Task!
+    uploader: User!
+    filename: String!
+    originalFilename: String!
+    contentType: String!
+    fileSize: Int!
+    filePath: String!
+    description: String
+    createdAt: String!
+    updatedAt: String!
+    isImage: Boolean!
+    fileSizeFormatted: String!
+}
+
+enum ActivityType {
+    TASK_CREATED
+    TASK_UPDATED
+    TASK_DELETED
+    TASK_ASSIGNED
+    TASK_UNASSIGNED
+    TASK_STATUS_CHANGED
+    TASK_DUE_DATE_CHANGED
+    TASK_ESTIMATION_CHANGED
+    COMMENT_ADDED
+    COMMENT_UPDATED
+    COMMENT_DELETED
+    ATTACHMENT_ADDED
+    ATTACHMENT_DELETED
+}
+
 type Query {
     tasks: [Task!]!
     tasksPaginated(
@@ -101,6 +158,18 @@ type Query {
     # Task Templates
     taskTemplates: [TaskTemplate!]!
     taskTemplate(id: ID!): TaskTemplate
+    
+    # Comments
+    taskComments(taskId: ID!): [TaskComment!]!
+    taskComment(id: ID!): TaskComment
+    
+    # Activities
+    taskActivities(taskId: ID!): [TaskActivity!]!
+    
+    # Attachments
+    taskAttachments(taskId: ID!): [TaskAttachment!]!
+    taskImages(taskId: ID!): [TaskAttachment!]!
+    taskAttachment(id: ID!): TaskAttachment
 }
 
 input CreateUserInput {
@@ -138,6 +207,16 @@ input UpdateTaskTemplateInput {
     title: String
     description: String
     estimationHours: Float
+}
+
+input CreateTaskCommentInput {
+    taskId: ID!
+    content: String!
+    parentCommentId: ID
+}
+
+input UpdateTaskCommentInput {
+    content: String!
 }
 
 input UpdateTaskInput {
@@ -183,4 +262,12 @@ type Mutation {
     updateTaskTemplate(id: ID!, input: UpdateTaskTemplateInput!): TaskTemplate!
     deleteTaskTemplate(id: ID!): Boolean!
     createTaskFromTemplate(templateId: ID!, assignedUserIds: [ID!]): Task!
+    
+    # Comments
+    createTaskComment(input: CreateTaskCommentInput!): TaskComment!
+    updateTaskComment(id: ID!, input: UpdateTaskCommentInput!): TaskComment!
+    deleteTaskComment(id: ID!): Boolean!
+    
+    # Attachments
+    deleteTaskAttachment(id: ID!): Boolean!
 }

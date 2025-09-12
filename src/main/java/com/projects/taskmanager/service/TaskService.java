@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import com.projects.taskmanager.config.TaskProperties;
 import com.projects.taskmanager.model.Task;
 import com.projects.taskmanager.model.TaskStatus;
+import com.projects.taskmanager.model.User;
+import com.projects.taskmanager.model.ActivityType;
 import com.projects.taskmanager.repository.TaskRepository;
 import com.projects.taskmanager.util.TextNormalizer;
 import com.projects.taskmanager.service.exception.TaskNotFoundException;
@@ -31,16 +33,18 @@ public class TaskService {
     private final TaskProperties taskProperties;
     private final TextNormalizer textNormalizer;
     private final WebSocketNotificationService notificationService;
+    private final TaskActivityService taskActivityService;
 
     /**
      * Constructor for TaskService.
      * @param taskRepository the repository to use for task operations
      */
-    public TaskService(TaskRepository taskRepository, TaskProperties taskProperties, TextNormalizer textNormalizer, WebSocketNotificationService notificationService) {
+    public TaskService(TaskRepository taskRepository, TaskProperties taskProperties, TextNormalizer textNormalizer, WebSocketNotificationService notificationService, TaskActivityService taskActivityService) {
         this.taskRepository = taskRepository;
         this.taskProperties = taskProperties;
         this.textNormalizer = textNormalizer;
         this.notificationService = notificationService;
+        this.taskActivityService = taskActivityService;
     }
 
     /**
@@ -79,6 +83,11 @@ public class TaskService {
         enforceTitleLength(task.getTitle());
         enforceDescriptionLength(task.getDescription());
         Task savedTask = taskRepository.save(task);
+        
+        // Log activity (if we have a user context)
+        // Note: In a real implementation, you'd need to pass the user context
+        // For now, we'll skip activity logging in the service layer
+        // and handle it in the controller layer where we have user context
         
         // Send WebSocket notification
         notificationService.notifyTaskCreated(savedTask);

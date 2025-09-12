@@ -14,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.projects.taskmanager.model.Task;
 import com.projects.taskmanager.model.TaskStatus;
+import com.projects.taskmanager.model.User;
 import com.projects.taskmanager.service.TaskService;
 import com.projects.taskmanager.service.UserService;
 import com.projects.taskmanager.graphql.input.CreateTaskInput;
@@ -24,6 +25,8 @@ import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.projects.taskmanager.graphql.GraphQLUserContext;
 import com.projects.taskmanager.observability.MetricsService;
+import com.projects.taskmanager.service.TaskActivityService;
+import com.projects.taskmanager.model.ActivityType;
 import io.micrometer.core.instrument.Timer;
 
 @Controller
@@ -33,12 +36,14 @@ public class TaskController {
     private final UserService userService;
     private final GraphQLUserContext userContext;
     private final MetricsService metricsService;
+    private final TaskActivityService taskActivityService;
 
-    public TaskController(TaskService taskService, UserService userService, GraphQLUserContext userContext, MetricsService metricsService) {
+    public TaskController(TaskService taskService, UserService userService, GraphQLUserContext userContext, MetricsService metricsService, TaskActivityService taskActivityService) {
         this.taskService = taskService;
         this.userService = userService;
         this.userContext = userContext;
         this.metricsService = metricsService;
+        this.taskActivityService = taskActivityService;
     }
 
     @QueryMapping
@@ -122,6 +127,11 @@ public class TaskController {
             }
             Task createdTask = taskService.createTask(task);
 
+            // Log activity
+            User currentUser = userContext.getCurrentUser();
+            taskActivityService.logActivity(createdTask, currentUser, ActivityType.TASK_CREATED, 
+                "Created task: " + createdTask.getTitle());
+
             // Handle user assignments if provided
             if (input.getAssignedUserIds() != null && !input.getAssignedUserIds().isEmpty()) {
                 Task result = userService.assignUsersToTask(createdTask.getId(), Set.copyOf(input.getAssignedUserIds()));
@@ -141,8 +151,17 @@ public class TaskController {
     public Boolean deleteTask(@Argument Long id) {
         Timer.Sample sample = metricsService.startGraphQLMutationTimer();
         try {
+            // Get the task before deletion for activity logging
+            Task taskToDelete = taskService.getTaskById(id).orElse(null);
+            
             boolean result = taskService.deleteTask(id);
             if (result) {
+                // Log activity
+                User currentUser = userContext.getCurrentUser();
+                if (taskToDelete != null) {
+                    taskActivityService.logActivity(taskToDelete, currentUser, ActivityType.TASK_DELETED, 
+                        "Deleted task: " + taskToDelete.getTitle());
+                }
                 metricsService.incrementTaskDeleted();
             }
             return result;
@@ -156,6 +175,9 @@ public class TaskController {
     public Task updateTask(@Argument Long id, @Argument("input") @Valid UpdateTaskInput input) {
         Timer.Sample sample = metricsService.startGraphQLMutationTimer();
         try {
+            // Get the task before update for activity logging
+            Task originalTask = taskService.getTaskById(id).orElse(null);
+            
             Task updatedTask = taskService.updateTask(
                 id,
                 input.getTitle(),
@@ -165,6 +187,27 @@ public class TaskController {
                 input.getDueDate(),
                 input.getEstimationHours()
             );
+
+            // Log activity for changes
+            User currentUser = userContext.getCurrentUser();
+            if (originalTask != null) {
+                if (input.getTitle() != null && !input.getTitle().equals(originalTask.getTitle())) {
+                    taskActivityService.logActivity(updatedTask, currentUser, ActivityType.TASK_UPDATED, 
+                        "Updated title", originalTask.getTitle(), input.getTitle());
+                }
+                if (input.getStatus() != null && !input.getStatus().equals(originalTask.getStatus())) {
+                    taskActivityService.logActivity(updatedTask, currentUser, ActivityType.TASK_STATUS_CHANGED, 
+                        "Changed status", originalTask.getStatus().name(), input.getStatus().name());
+                }
+                if (input.getDueDate() != null && !input.getDueDate().equals(originalTask.getDueDate() != null ? originalTask.getDueDate().toString() : null)) {
+                    taskActivityService.logActivity(updatedTask, currentUser, ActivityType.TASK_DUE_DATE_CHANGED, 
+                        "Updated due date", originalTask.getDueDate() != null ? originalTask.getDueDate().toString() : "null", input.getDueDate());
+                }
+                if (input.getEstimationHours() != null && !input.getEstimationHours().equals(originalTask.getEstimationHours())) {
+                    taskActivityService.logActivity(updatedTask, currentUser, ActivityType.TASK_ESTIMATION_CHANGED, 
+                        "Updated estimation hours", originalTask.getEstimationHours() != null ? originalTask.getEstimationHours().toString() : "null", input.getEstimationHours().toString());
+                }
+            }
 
             // Handle user assignments if provided
             if (input.getAssignedUserIds() != null) {
