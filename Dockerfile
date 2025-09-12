@@ -1,15 +1,20 @@
 # Multi-stage build for production
 FROM eclipse-temurin:21-jdk AS builder
 
+# Install Maven
+RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
+
 # Set workdir
 WORKDIR /app
 
-# Copy pom.xml and download dependencies
+# Copy pom.xml first for better layer caching
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copy source code and build
+# Copy source code
 COPY src ./src
+
+# Build the application
 RUN mvn clean package -DskipTests
 
 # Production stage
@@ -27,10 +32,6 @@ USER spring:spring
 
 # Expose port
 EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # Run the app with production profile
 ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
