@@ -46,7 +46,9 @@ public class SecurityConfig {
                         req.requestMatchers(
                                         "/auth/**",
                                         "/h2-console/**",
-                                        "/actuator/**"
+                                        "/actuator/**",
+                                        "/graphql",
+                                        "/graphiql/**"
                                 ).permitAll()
                                 .anyRequest()
                                 .authenticated()
