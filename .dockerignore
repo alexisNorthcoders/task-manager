@@ -1,0 +1,57 @@
+# Maven
+target/
+.mvn/
+mvnw
+mvnw.cmd
+pom.xml
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+HELP.md
+LEARNING_PLAN.md
+OBSERVABILITY_README.md
+SECURITY_README.md
+ROADMAP.md
+project.md
+
+# Scripts
+*.sh
+run_client.sh
+run-dev.sh
+test-*.sh
+
+# Data
+data/
+uploads/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Client (if present)
+client/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
