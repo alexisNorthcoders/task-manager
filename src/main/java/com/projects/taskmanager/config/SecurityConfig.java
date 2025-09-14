@@ -48,7 +48,8 @@ public class SecurityConfig {
                                         "/h2-console/**",
                                         "/actuator/**",
                                         "/graphql",
-                                        "/graphiql/**"
+                                        "/graphiql/**",
+                                        "/ws/**"
                                 ).permitAll()
                                 .anyRequest()
                                 .authenticated()
