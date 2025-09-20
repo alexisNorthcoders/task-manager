@@ -14,6 +14,7 @@ import com.projects.taskmanager.service.exception.TaskNotFoundException;
 import com.projects.taskmanager.service.exception.UserNotFoundException;
 import com.projects.taskmanager.graphql.BulkOperationResult;
 import java.util.ArrayList;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * Service for managing users.
@@ -24,16 +25,20 @@ public class UserService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final WebSocketNotificationService notificationService;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * Constructor for UserService.
      * @param userRepository the repository to use for user operations
      * @param taskRepository the repository to use for task operations
+     * @param notificationService the notification service
+     * @param passwordEncoder the password encoder
      */
-    public UserService(UserRepository userRepository, TaskRepository taskRepository, WebSocketNotificationService notificationService) {
+    public UserService(UserRepository userRepository, TaskRepository taskRepository, WebSocketNotificationService notificationService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.taskRepository = taskRepository;
         this.notificationService = notificationService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -250,5 +255,58 @@ public class UserService {
         }
         
         return result;
+    }
+
+    /**
+     * Update user password.
+     * @param userId the user ID
+     * @param currentPassword the current password for verification
+     * @param newPassword the new password
+     * @return the updated user
+     */
+    public User updateUserPassword(Long userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        // Validate new password
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            throw new IllegalArgumentException("New password cannot be empty");
+        }
+
+        if (newPassword.length() < 6) {
+            throw new IllegalArgumentException("New password must be at least 6 characters long");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return userRepository.save(user);
+    }
+
+    /**
+     * Update user avatar.
+     * @param userId the user ID
+     * @param avatarUrl the avatar URL
+     * @return the updated user
+     */
+    public User updateUserAvatar(Long userId, String avatarUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        user.setAvatarUrl(avatarUrl);
+        return userRepository.save(user);
+    }
+
+    /**
+     * Get the current user by username (for authentication context).
+     * @param username the username
+     * @return the current user
+     */
+    public User getCurrentUser(String username) {
+        return userRepository.findByUsername(username);
     }
 }

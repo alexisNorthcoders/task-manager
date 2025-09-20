@@ -6,21 +6,31 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.graphql.data.method.annotation.Argument;
-import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.projects.taskmanager.model.Task;
 import com.projects.taskmanager.model.User;
-import com.projects.taskmanager.repository.UserRepository;
-import com.projects.taskmanager.service.TaskService;
 import com.projects.taskmanager.service.UserService;
 import com.projects.taskmanager.graphql.input.CreateUserInput;
 import com.projects.taskmanager.graphql.input.UpdateUserInput;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
+
+import java.util.HashMap;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 /**
  * GraphQL Controller for User operations.
@@ -30,13 +40,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 public class UserController {
 
     private final UserService userService;
-    private final TaskService taskService;
-    private final UserRepository userRepository;
 
-    public UserController(UserService userService, TaskService taskService, UserRepository userRepository) {
+    public UserController(UserService userService) {
         this.userService = userService;
-        this.taskService = taskService;
-        this.userRepository = userRepository;
     }
 
     @QueryMapping
@@ -97,38 +103,177 @@ public class UserController {
         return userService.unassignUsersFromTask(taskId, userIdSet);
     }
 
+    @MutationMapping
+    @PreAuthorize("hasRole('USER')")
+    public User updateUserPassword(@Argument String currentPassword, @Argument String newPassword) {
+        // Get current user from security context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        User currentUser = userService.getUserByUsername(username);
+
+        return userService.updateUserPassword(currentUser.getId(), currentPassword, newPassword);
+    }
+
+    @MutationMapping
+    @PreAuthorize("hasRole('USER')")
+    public User updateUserAvatar(@Argument String avatarUrl) {
+        // Get current user from security context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        User currentUser = userService.getUserByUsername(username);
+
+        return userService.updateUserAvatar(currentUser.getId(), avatarUrl);
+    }
+
+
+    // REST endpoints for user settings
+
     /**
-     * Batch mapping to efficiently load users for multiple tasks.
-     * Spring GraphQL automatically handles the DataLoader for this.
+     * Update user password.
      */
-    @BatchMapping(typeName = "Task", field = "assignedUsers")
-    public Map<Task, List<User>> assignedUsers(List<Task> tasks) {
-        // Extract task IDs
-        List<Long> taskIds = tasks.stream()
-                .map(Task::getId)
-                .toList();
-        
-        // Batch load users for all tasks
-        List<User> users = userRepository.findUsersByAssignedTaskIds(taskIds);
-        
-        // Group users by task, ensuring every task has a list (even if empty)
-        Map<Task, List<User>> result = tasks.stream()
-                .collect(Collectors.toMap(
-                        task -> task,
-                        task -> new java.util.ArrayList<>() // Start with empty mutable list
-                ));
-        
-        // Fill in the users for tasks that have them
-        users.stream()
-                .flatMap(user -> user.getAssignedTasks().stream()
-                        .filter(task -> taskIds.contains(task.getId()))
-                        .map(task -> Map.entry(task, user)))
-                .forEach(entry -> {
-                    Task task = entry.getKey();
-                    User user = entry.getValue();
-                    result.get(task).add(user);
-                });
-        
-        return result;
+    @PostMapping("/api/user/password")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Map<String, Object>> updatePassword(@RequestBody Map<String, String> request) {
+        try {
+            // Get current user from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            User currentUser = userService.getUserByUsername(username);
+
+            String currentPassword = request.get("currentPassword");
+            String newPassword = request.get("newPassword");
+
+            if (currentPassword == null || newPassword == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "Current password and new password are required");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Use the UserService method we created
+            userService.updateUserPassword(currentUser.getId(), currentPassword, newPassword);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Password updated successfully");
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Failed to update password: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    /**
+     * Upload user avatar.
+     */
+    @PostMapping("/api/user/avatar")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Map<String, Object>> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        try {
+            // Validate file
+            if (file.isEmpty()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "File is empty");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Check file type
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "File must be an image");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Check file size (max 5MB)
+            if (file.getSize() > 5 * 1024 * 1024) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "File size must be less than 5MB");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Get current user
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            User currentUser = userService.getUserByUsername(username);
+
+            // Generate unique filename
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename != null && originalFilename.contains(".")
+                ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                : ".jpg";
+            String uniqueFilename = "avatar_" + currentUser.getId() + "_" + UUID.randomUUID() + extension;
+
+            // Create uploads directory if it doesn't exist
+            Path uploadDir = Paths.get("uploads", "avatars");
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+            }
+
+            // Save file
+            Path filePath = uploadDir.resolve(uniqueFilename);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Update user avatar URL
+            String avatarUrl = "/api/user/avatar/" + uniqueFilename;
+            userService.updateUserAvatar(currentUser.getId(), avatarUrl);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("avatarUrl", avatarUrl);
+            response.put("message", "Avatar uploaded successfully");
+            return ResponseEntity.ok(response);
+
+        } catch (IOException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Failed to upload avatar: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Failed to upload avatar: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    /**
+     * Get user avatar.
+     */
+    @GetMapping("/api/user/avatar/{filename}")
+    public ResponseEntity<byte[]> getAvatar(@PathVariable String filename) {
+        try {
+            Path filePath = Paths.get("uploads", "avatars", filename);
+
+            if (!Files.exists(filePath)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            byte[] fileContent = Files.readAllBytes(filePath);
+            String contentType = Files.probeContentType(filePath);
+
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", contentType)
+                    .header("Cache-Control", "public, max-age=86400") // Cache for 1 day
+                    .body(fileContent);
+
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

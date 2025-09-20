@@ -60,6 +60,9 @@ public class User implements UserDetails {
     @LastModifiedDate
     private Instant updatedAt;
 
+    @Column
+    private String avatarUrl;
+
     @ManyToMany(mappedBy = "assignedUsers")
     private Set<Task> assignedTasks = new HashSet<>();
 
@@ -81,6 +84,17 @@ public class User implements UserDetails {
         this.lastName = lastName;
         this.password = password;
         this.role = role;
+        this.avatarUrl = null;
+    }
+
+    public User(String username, String email, String firstName, String lastName, String password, Role role, String avatarUrl) {
+        this.username = username;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.password = password;
+        this.role = role;
+        this.avatarUrl = avatarUrl;
     }
 
     public static User create(String username, String email, String firstName, String lastName) {
@@ -166,6 +180,14 @@ public class User implements UserDetails {
         this.role = role;
     }
 
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
     // Helper methods
     public void assignTask(Task task) {
         this.assignedTasks.add(task);
@@ -232,6 +254,7 @@ public class User implements UserDetails {
                 ", email='" + email + '\'' +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
+                ", avatarUrl='" + avatarUrl + '\'' +
                 '}';
     }
 }
