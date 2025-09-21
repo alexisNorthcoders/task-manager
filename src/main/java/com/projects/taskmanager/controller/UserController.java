@@ -227,7 +227,14 @@ public class UserController {
             // Create uploads directory if it doesn't exist
             Path uploadDir = Paths.get("uploads", "avatars");
             if (!Files.exists(uploadDir)) {
-                Files.createDirectories(uploadDir);
+                try {
+                    Files.createDirectories(uploadDir);
+                } catch (IOException e) {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("success", false);
+                    response.put("error", "Failed to create upload directory: " + e.getMessage());
+                    return ResponseEntity.internalServerError().body(response);
+                }
             }
 
             // Save file
