@@ -63,7 +63,11 @@ public class TaskAttachmentService {
         // Create upload directory if it doesn't exist
         Path uploadPath = Paths.get(UPLOAD_DIR);
         if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+            try {
+                Files.createDirectories(uploadPath);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to create upload directory: " + e.getMessage(), e);
+            }
         }
         
         // Generate unique filename

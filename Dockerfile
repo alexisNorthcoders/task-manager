@@ -28,6 +28,12 @@ COPY --from=builder /app/target/taskmanager-0.0.1-SNAPSHOT.jar app.jar
 
 # Create non-root user for security
 RUN addgroup --system spring && adduser --system spring --ingroup spring
+
+# Create uploads directory structure and set permissions before switching to non-root user
+RUN mkdir -p /app/uploads/avatars /app/uploads/attachments && \
+    chown -R spring:spring /app/uploads && \
+    chmod -R 755 /app/uploads
+
 USER spring:spring
 
 # Expose port
