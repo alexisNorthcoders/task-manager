@@ -154,6 +154,7 @@ type Query {
     tasksByStatus(status: TaskStatus!): [Task!]!
     users: [User!]!
     user(id: ID!): User
+    currentUser: User
     usersByTask(taskId: ID!): [User!]!
     
     # Task Templates

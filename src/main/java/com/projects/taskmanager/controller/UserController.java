@@ -60,6 +60,15 @@ public class UserController {
         return userService.getUsersByTaskId(taskId);
     }
 
+    @QueryMapping
+    public User currentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            return (User) authentication.getPrincipal();
+        }
+        return null;
+    }
+
     @MutationMapping
     @PreAuthorize("hasRole('ADMIN')")
     public User createUser(@Argument("input") @Valid CreateUserInput input) {
