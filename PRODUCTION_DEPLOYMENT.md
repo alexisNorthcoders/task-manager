@@ -87,9 +87,31 @@ LOGGING_LEVEL=INFO
 # File Upload Limits
 MAX_FILE_SIZE=10MB
 MAX_REQUEST_SIZE=10MB
+
+# Frontend Configuration
+PUBLIC_API_URL=http://your-vps-ip:8080
 ```
 
 The docker-compose.yml is already configured to use these environment variables with sensible defaults.
+
+### Frontend Configuration
+
+The frontend container (`taskmanager-client`) is built using GitHub Actions with the `PUBLIC_API_URL` secret. To fix attachment download issues:
+
+1. **Update the GitHub Secret**:
+   - Go to your GitHub repository settings
+   - Navigate to Secrets and Variables → Actions
+   - Update the `PUBLIC_API_URL` secret to: `http://95.217.177.76:8080`
+   - Or use your actual production domain if you have one
+
+2. **Trigger a new build**:
+   - Push a commit to the main branch to trigger the GitHub Action
+   - Or manually trigger the workflow from the Actions tab
+
+This ensures that:
+- Attachment downloads work correctly
+- API calls are made to the right server
+- Image previews load properly
 
 ## SSL/HTTPS Setup (Optional)
 
@@ -170,6 +192,16 @@ docker-compose logs -f taskmanager
    docker-compose up -d
    ```
 
+3. **Update frontend with new API URL:**
+   ```bash
+   # If you need to change the API URL:
+   # 1. Update the PUBLIC_API_URL secret in GitHub
+   # 2. Push a commit to trigger the GitHub Action
+   # 3. Pull the new image
+   docker-compose pull taskmanager-client
+   docker-compose up -d taskmanager-client
+   ```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -200,6 +232,24 @@ docker-compose logs -f taskmanager
    # Change port in docker-compose.yml
    ports:
      - "8081:8080"  # Use port 8081 instead
+   ```
+
+4. **Attachment downloads not working:**
+   ```bash
+   # Check if the GitHub secret is set correctly
+   # Go to GitHub → Settings → Secrets and Variables → Actions
+   # Verify PUBLIC_API_URL secret is set to: http://95.217.177.76:8080
+   
+   # Pull the latest image (after updating the secret and triggering a build)
+   docker-compose pull taskmanager-client
+   docker-compose up -d taskmanager-client
+   
+   # Verify the API is accessible from the frontend container
+   docker-compose exec taskmanager-client curl -I http://95.217.177.76:8080/actuator/health
+   
+   # Check browser console for connection errors
+   # Should see requests to http://95.217.177.76:8080/api/attachments/download/X
+   # NOT http://localhost:8080/api/attachments/download/X
    ```
 
 ### Performance Tuning
